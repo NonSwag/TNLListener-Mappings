@@ -1,2 +1,6 @@
 # Project exclude paths
 /v1_16_R3/target/
+/src/test/
+/v1_16_R3/src/test/
+/TNLListener-Mappings.iml/
+/.ide/
