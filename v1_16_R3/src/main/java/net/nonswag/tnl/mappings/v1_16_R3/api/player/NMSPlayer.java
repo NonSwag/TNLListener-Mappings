@@ -38,14 +38,10 @@ import org.bukkit.inventory.ItemStack;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 public class NMSPlayer extends TNLPlayer {
-
-    @Nonnull
-    private static final HashMap<Player, NMSPlayer> playerHashMap = new HashMap<>();
 
     public NMSPlayer(@Nonnull Player player) {
         super(player);
@@ -589,13 +585,7 @@ public class NMSPlayer extends TNLPlayer {
             data().export();
         } catch (Exception ignored) {
         } finally {
-            playerHashMap.remove(bukkit());
+            players.remove(bukkit());
         }
-    }
-
-    @Nonnull
-    public static NMSPlayer cast(@Nonnull Player player) {
-        if (!playerHashMap.containsKey(player)) playerHashMap.put(player, new NMSPlayer(player));
-        return playerHashMap.get(player);
     }
 }
