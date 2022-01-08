@@ -1,5 +1,6 @@
 package net.nonswag.tnl.mappings.v1_16_R3;
 
+import net.nonswag.tnl.listener.Bootstrap;
 import net.nonswag.tnl.listener.api.bossbar.TNLBossBar;
 import net.nonswag.tnl.listener.api.item.TNLItem;
 import net.nonswag.tnl.listener.api.mapper.Mapping;
@@ -8,6 +9,7 @@ import net.nonswag.tnl.listener.api.version.Version;
 import net.nonswag.tnl.mappings.v1_16_R3.api.bossbar.NMSBossBar;
 import net.nonswag.tnl.mappings.v1_16_R3.api.item.NMSItem;
 import net.nonswag.tnl.mappings.v1_16_R3.api.player.NMSPlayer;
+import net.nonswag.tnl.mappings.v1_16_R3.listeners.PacketListener;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -18,6 +20,10 @@ import javax.annotation.Nonnull;
 
 @Mapping.Info(name = "Origin 1.16.5", authors = "NonSwag", description = "An official TNL-Production")
 public class Mappings extends Mapping {
+
+    public Mappings() {
+        Bootstrap.getInstance().getEventManager().registerListener(new PacketListener());
+    }
 
     @Nonnull
     @Override
