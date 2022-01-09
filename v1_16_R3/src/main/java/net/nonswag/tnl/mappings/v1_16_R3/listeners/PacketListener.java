@@ -18,8 +18,8 @@ import net.nonswag.tnl.listener.api.gui.GUIItem;
 import net.nonswag.tnl.listener.api.gui.Interaction;
 import net.nonswag.tnl.listener.api.holograms.Hologram;
 import net.nonswag.tnl.listener.api.holograms.event.InteractEvent;
-import net.nonswag.tnl.listener.api.packet.v1_16.R3.OpenWindowPacket;
-import net.nonswag.tnl.listener.api.packet.v1_16.R3.SetSlotPacket;
+import net.nonswag.tnl.listener.api.packets.OpenWindowPacket;
+import net.nonswag.tnl.listener.api.packets.SetSlotPacket;
 import net.nonswag.tnl.listener.api.player.npc.FakePlayer;
 import net.nonswag.tnl.listener.api.serializer.ModPacketSerializer;
 import net.nonswag.tnl.listener.api.settings.Settings;
@@ -232,7 +232,7 @@ public class PacketListener implements Listener {
                         event.setPacketField("a", 0);
                     }
                     event.setCancelled(true);
-                    event.reply(new SetSlotPacket(SetSlotPacket.Inventory.COURSER, -1, null));
+                    event.reply(SetSlotPacket.create(SetSlotPacket.Inventory.COURSER, -1, null));
                     event.getPlayer().inventoryManager().updateInventory();
                     event.getPlayer().interfaceManager().updateGUI();
                 }
@@ -241,7 +241,7 @@ public class PacketListener implements Listener {
                 if (gui != null) {
                     event.setCancelled(true);
                     if (!gui.getCloseListener().onClose(event.getPlayer(), false)) {
-                        event.reply(new OpenWindowPacket(gui.getSize() / 9, Message.format(gui.getTitle())));
+                        event.reply(OpenWindowPacket.create(gui.getSize() / 9, Message.format(gui.getTitle())));
                         event.getPlayer().interfaceManager().updateGUI(gui);
                     } else {
                         if (gui.getCloseSound() != null) {

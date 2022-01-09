@@ -11,6 +11,14 @@
 
     <groupId>net.nonswag.tnl.mappings.v1_16_R3</groupId>
     <artifactId>v1_16_R3</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.22</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
     <properties>
         <maven.compiler.source>16</maven.compiler.source>

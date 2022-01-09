@@ -14,8 +14,7 @@ import net.nonswag.tnl.listener.api.entity.TNLEntityPlayer;
 import net.nonswag.tnl.listener.api.location.BlockLocation;
 import net.nonswag.tnl.listener.api.mods.labymod.LabyPlayer;
 import net.nonswag.tnl.listener.api.mods.mysterymod.MysteryPlayer;
-import net.nonswag.tnl.listener.api.packet.PacketBuilder;
-import net.nonswag.tnl.listener.api.packet.v1_16.R3.*;
+import net.nonswag.tnl.listener.api.packets.*;
 import net.nonswag.tnl.listener.api.player.Skin;
 import net.nonswag.tnl.listener.api.player.TNLPlayer;
 import net.nonswag.tnl.listener.api.player.manager.*;
@@ -89,9 +88,9 @@ public class NMSPlayer extends TNLPlayer {
     }
 
     @Override
-    public void sendPacket(@Nonnull PacketBuilder<?> packet) {
+    public void sendPacket(@Nonnull PacketBuilder packet) {
         try {
-            playerConnection().sendPacket((Packet<?>) packet.build());
+            playerConnection().sendPacket(packet.build());
         } catch (Exception e) {
             Logger.error.println(e);
         }
@@ -212,7 +211,7 @@ public class NMSPlayer extends TNLPlayer {
                 BlockLocation location = new BlockLocation(worldManager().getWorld(), loc.getBlockX(), loc.getBlockY() - 5, loc.getBlockZ());
                 signMenu.setLocation(location);
                 BlockPosition position = new BlockPosition(location.getX(), location.getY(), location.getZ());
-                OpenSignPacket editor = new OpenSignPacket(location);
+                OpenSignPacket editor = OpenSignPacket.create(location);
                 TileEntitySign tileEntitySign = new TileEntitySign();
                 tileEntitySign.setLocation(worldServer(), position);
                 for (int line = 0; line < signMenu.getLines().length; line++) {
@@ -304,24 +303,24 @@ public class NMSPlayer extends TNLPlayer {
             @Override
             public void disguise(@Nonnull TNLEntity entity, @Nonnull TNLPlayer receiver) {
                 if (getPlayer().equals(receiver)) return;
-                receiver.sendPacket(new EntityDestroyPacket(getPlayer().bukkit()));
+                receiver.sendPacket(EntityDestroyPacket.create(getPlayer().bukkit()));
                 int id = entity.getEntityId();
-                receiver.sendPacket(new EntityDestroyPacket(id));
+                receiver.sendPacket(EntityDestroyPacket.create(id));
                 if (entity instanceof TNLEntityPlayer player) {
-                    receiver.sendPacket(new PlayerInfoPacket(player, PlayerInfoPacket.Action.REMOVE_PLAYER));
+                    receiver.sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.REMOVE_PLAYER));
                     Reflection.setField(entity, Entity.class, "id", getPlayer().getEntityId());
-                    receiver.sendPacket(new PlayerInfoPacket(player, PlayerInfoPacket.Action.ADD_PLAYER));
-                    receiver.sendPacket(new NamedEntitySpawnPacket(player));
+                    receiver.sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.ADD_PLAYER));
+                    receiver.sendPacket(NamedEntitySpawnPacket.create(player));
                 } else if (entity instanceof TNLEntityLiving livingEntity) {
                     Reflection.setField(entity, Entity.class, "id", getPlayer().getEntityId());
-                    receiver.sendPacket(new LivingEntitySpawnPacket(livingEntity.bukkit()));
-                    receiver.sendPacket(new EntityEquipmentPacket(livingEntity.bukkit()));
+                    receiver.sendPacket(LivingEntitySpawnPacket.create(livingEntity.bukkit()));
+                    receiver.sendPacket(EntityEquipmentPacket.create(livingEntity.bukkit()));
                 } else {
                     Reflection.setField(entity, Entity.class, "id", getPlayer().getEntityId());
-                    receiver.sendPacket(new EntitySpawnPacket(entity.bukkit()));
+                    receiver.sendPacket(EntitySpawnPacket.create(entity.bukkit()));
                 }
-                receiver.sendPacket(new EntityMetadataPacket(entity.bukkit()));
-                receiver.sendPacket(new EntityHeadRotationPacket(entity.bukkit()));
+                receiver.sendPacket(EntityMetadataPacket.create(entity.bukkit()));
+                receiver.sendPacket(EntityHeadRotationPacket.create(entity.bukkit()));
                 Reflection.setField(entity, Entity.class, "id", id);
             }
 
