@@ -18,9 +18,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 
 @Mapping.Info(name = "Origin 1.16.5", authors = "NonSwag", description = "An official TNL-Production")
 public class Mappings extends Mapping {
+
+    public Mappings(@Nonnull File file) {
+        super(file);
+    }
 
     @Override
     public void enable() {
