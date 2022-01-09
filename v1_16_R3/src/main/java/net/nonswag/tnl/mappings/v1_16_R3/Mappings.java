@@ -4,6 +4,8 @@ import net.nonswag.tnl.listener.api.bossbar.TNLBossBar;
 import net.nonswag.tnl.listener.api.item.TNLItem;
 import net.nonswag.tnl.listener.api.mapper.Mapping;
 import net.nonswag.tnl.listener.api.player.TNLPlayer;
+import net.nonswag.tnl.listener.api.plugin.PluginUpdate;
+import net.nonswag.tnl.listener.api.settings.Settings;
 import net.nonswag.tnl.listener.api.version.Version;
 import net.nonswag.tnl.mappings.v1_16_R3.api.bossbar.NMSBossBar;
 import net.nonswag.tnl.mappings.v1_16_R3.api.item.NMSItem;
@@ -23,6 +25,7 @@ public class Mappings extends Mapping {
     @Override
     public void enable() {
         getEventManager().registerListener(new PacketListener());
+        if (Settings.AUTO_UPDATER.getValue()) new PluginUpdate(this).downloadUpdate();
     }
 
     @Nonnull
