@@ -9,13 +9,13 @@ import javax.annotation.Nonnull;
 
 public final class NMSNamedEntitySpawnPacket extends NamedEntitySpawnPacket {
 
-    NMSNamedEntitySpawnPacket(@Nonnull HumanEntity player) {
-        super(player);
+    NMSNamedEntitySpawnPacket(@Nonnull HumanEntity human) {
+        super(human);
     }
 
     @Nonnull
     @Override
     public PacketPlayOutNamedEntitySpawn build() {
-        return new PacketPlayOutNamedEntitySpawn(((CraftHumanEntity) getPlayer()).getHandle());
+        return new PacketPlayOutNamedEntitySpawn(((CraftHumanEntity) getHuman()).getHandle());
     }
 }

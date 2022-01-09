@@ -69,8 +69,8 @@ public final class PacketManager extends Mapping.Packets {
 
     @Nonnull
     @Override
-    public CameraPacket cameraPacket(int i) {
-        return new NMSCameraPacket(i);
+    public CameraPacket cameraPacket(int targetId) {
+        return new NMSCameraPacket(targetId);
     }
 
     @Nonnull
@@ -153,8 +153,8 @@ public final class PacketManager extends Mapping.Packets {
 
     @Nonnull
     @Override
-    public EntityTeleportPacket entityTeleportPacket(int i, @Nonnull Position position) {
-        return new NMSEntityTeleportPacket(i, position);
+    public EntityTeleportPacket entityTeleportPacket(int entityId, @Nonnull Position position) {
+        return new NMSEntityTeleportPacket(entityId, position);
     }
 
     @Nonnull
@@ -183,8 +183,8 @@ public final class PacketManager extends Mapping.Packets {
 
     @Nonnull
     @Override
-    public NamedEntitySpawnPacket namedEntitySpawnPacket(@Nonnull HumanEntity player) {
-        return new NMSNamedEntitySpawnPacket(player);
+    public NamedEntitySpawnPacket namedEntitySpawnPacket(@Nonnull HumanEntity human) {
+        return new NMSNamedEntitySpawnPacket(human);
     }
 
     @Nonnull
