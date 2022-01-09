@@ -1,6 +1,5 @@
 package net.nonswag.tnl.mappings.v1_16_R3;
 
-import net.nonswag.tnl.listener.Bootstrap;
 import net.nonswag.tnl.listener.api.bossbar.TNLBossBar;
 import net.nonswag.tnl.listener.api.item.TNLItem;
 import net.nonswag.tnl.listener.api.mapper.Mapping;
@@ -21,8 +20,9 @@ import javax.annotation.Nonnull;
 @Mapping.Info(name = "Origin 1.16.5", authors = "NonSwag", description = "An official TNL-Production")
 public class Mappings extends Mapping {
 
-    public Mappings() {
-        Bootstrap.getInstance().getEventManager().registerListener(new PacketListener());
+    @Override
+    public void enable() {
+        getEventManager().registerListener(new PacketListener());
     }
 
     @Nonnull
