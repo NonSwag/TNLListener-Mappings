@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Mapping-1.18">
+    <output-path>$USER_HOME$/Desktop/Coding/PluginProjects/Plugins/mappings</output-path>
+    <root id="archive" name="Mapping-1.18.jar">
+      <element id="module-output" name="v1_18_R1" />
+    </root>
+  </artifact>
+</component>

@@ -9,6 +9,7 @@ import net.nonswag.tnl.listener.api.item.SlotType;
 import net.nonswag.tnl.listener.api.item.TNLItem;
 import net.nonswag.tnl.listener.api.player.GameProfile;
 import net.nonswag.tnl.listener.api.player.Skin;
+import net.nonswag.tnl.mappings.v1_16_R3.api.item.SlotWrapper;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -19,7 +20,7 @@ import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
 
 import javax.annotation.Nonnull;
 
-public class NMSEntityPlayer extends EntityPlayer implements TNLEntityPlayer {
+public class NMSEntityPlayer extends EntityPlayer implements TNLEntityPlayer, SlotWrapper {
 
     @Nonnull
     private final GameProfile gameProfile;
@@ -41,7 +42,7 @@ public class NMSEntityPlayer extends EntityPlayer implements TNLEntityPlayer {
 
     @Override
     public void setItem(@Nonnull SlotType slot, @Nonnull TNLItem item) {
-        setSlot(slot.nms(), CraftItemStack.asNMSCopy(item.getItemStack()), true);
+        setSlot(wrap(slot), CraftItemStack.asNMSCopy(item.getItemStack()), true);
     }
 
     @Override

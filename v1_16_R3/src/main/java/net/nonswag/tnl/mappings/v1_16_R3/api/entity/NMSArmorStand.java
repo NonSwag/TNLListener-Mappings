@@ -4,6 +4,7 @@ import net.minecraft.server.v1_16_R3.*;
 import net.nonswag.tnl.listener.api.entity.TNLArmorStand;
 import net.nonswag.tnl.listener.api.item.SlotType;
 import net.nonswag.tnl.listener.api.item.TNLItem;
+import net.nonswag.tnl.mappings.v1_16_R3.api.item.SlotWrapper;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
@@ -14,7 +15,7 @@ import org.bukkit.craftbukkit.v1_16_R3.util.CraftChatMessage;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class NMSArmorStand extends EntityArmorStand implements TNLArmorStand {
+public class NMSArmorStand extends EntityArmorStand implements TNLArmorStand, SlotWrapper {
 
     public NMSArmorStand(@Nonnull World world, double x, double y, double z, float yaw, float pitch) {
         super(((CraftWorld) world).getHandle(), x, y, z);
@@ -134,7 +135,7 @@ public class NMSArmorStand extends EntityArmorStand implements TNLArmorStand {
 
     @Override
     public void setItem(@Nonnull SlotType slot, @Nonnull TNLItem item) {
-        setSlot(slot.nms(), CraftItemStack.asNMSCopy(item.getItemStack()), true);
+        setSlot(wrap(slot), CraftItemStack.asNMSCopy(item.getItemStack()), true);
     }
 
     @Override

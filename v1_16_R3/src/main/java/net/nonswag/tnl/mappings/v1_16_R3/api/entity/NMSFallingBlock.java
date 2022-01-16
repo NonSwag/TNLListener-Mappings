@@ -25,48 +25,37 @@ public class NMSFallingBlock extends EntityFallingBlock implements TNLFallingBlo
         setNoGravity(true);
     }
 
-    @Nonnull
     @Override
-    public NMSFallingBlock setType(@Nonnull Material type) {
+    public void setType(@Nonnull Material type) {
         Reflection.setField(this, "block", ((CraftBlockData) type.createBlockData()).getState());
-        return this;
     }
 
-    @Nonnull
     @Override
-    public NMSFallingBlock setGlowing(boolean glowing) {
+    public void setGlowing(boolean glowing) {
         this.glowing = glowing;
         setFlag(6, true);
-        return this;
     }
 
-    @Nonnull
     @Override
-    public NMSFallingBlock teleport(@Nonnull Location location) {
+    public boolean teleport(@Nonnull Location location) {
         setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-        return this;
+        return true;
     }
 
-    @Nonnull
     @Override
-    public NMSFallingBlock teleport(@Nonnull Entity entity) {
-        teleport(entity.getLocation());
-        return this;
+    public boolean teleport(@Nonnull Entity entity) {
+        return teleport(entity.getLocation());
     }
 
-    @Nonnull
     @Override
-    public NMSFallingBlock teleport(@Nonnull TNLEntity entity) {
-        teleport(entity.bukkit());
-        return this;
+    public boolean teleport(@Nonnull TNLEntity entity) {
+        return teleport(entity.bukkit());
     }
 
-    @Nonnull
     @Override
-    public NMSFallingBlock setCustomName(@Nonnull String customName) {
+    public void setCustomName(@Nonnull String customName) {
         IChatBaseComponent[] components = CraftChatMessage.fromString(customName);
         super.setCustomName(components[0]);
-        return this;
     }
 
     @Override

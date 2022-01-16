@@ -1,9 +1,27 @@
-package net.nonswag.tnl.mappings.v1_16_R3.api.player;
+package net.nonswag.tnl.mappings.v1_18_R1.api.player;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import io.netty.channel.*;
-import net.minecraft.server.v1_16_R3.*;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.core.IRegistry;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.chat.ChatMessage;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.PacketPlayOutTileEntityData;
+import net.minecraft.network.syncher.DataWatcher;
+import net.minecraft.network.syncher.DataWatcherObject;
+import net.minecraft.network.syncher.DataWatcherRegistry;
+import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.server.network.PlayerConnection;
+import net.minecraft.world.entity.EntityLightning;
+import net.minecraft.world.entity.EntityLiving;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.ai.attributes.AttributeBase;
+import net.minecraft.world.entity.item.EntityItem;
+import net.minecraft.world.level.block.entity.TileEntitySign;
+import net.minecraft.world.level.block.state.IBlockData;
 import net.nonswag.tnl.core.api.logger.Logger;
 import net.nonswag.tnl.core.api.message.Message;
 import net.nonswag.tnl.core.api.reflection.Reflection;
@@ -26,18 +44,19 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R3.attribute.CraftAttributeInstance;
-import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_16_R3.util.CraftNamespacedKey;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.v1_18_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_18_R1.attribute.CraftAttributeInstance;
+import org.bukkit.craftbukkit.v1_18_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_18_R1.util.CraftNamespacedKey;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 public class NMSPlayer extends TNLPlayer {
@@ -54,12 +73,12 @@ public class NMSPlayer extends TNLPlayer {
 
     @Nonnull
     private PlayerConnection playerConnection() {
-        return nms().playerConnection;
+        return nms().b;
     }
 
     @Nonnull
     private NetworkManager networkManager() {
-        return playerConnection().networkManager;
+        return playerConnection().a;
     }
 
     @Nonnull
@@ -69,7 +88,7 @@ public class NMSPlayer extends TNLPlayer {
 
     @Override
     public void setName(@Nonnull String name) {
-        GameProfile profile = nms().getProfile();
+        GameProfile profile = nms().fp();
         Reflection.setField(profile, "name", name);
         for (Player all : Bukkit.getOnlinePlayers()) {
             all.hidePlayer(Bootstrap.getInstance(), bukkit());
@@ -79,18 +98,18 @@ public class NMSPlayer extends TNLPlayer {
 
     @Override
     public int getPing() {
-        return nms().ping;
+        return nms().e;
     }
 
     @Override
     public void setPing(int ping) {
-        nms().ping = ping;
+        nms().e = ping;
     }
 
     @Override
     public void sendPacket(@Nonnull PacketBuilder packet) {
         try {
-            playerConnection().sendPacket(packet.build());
+            playerConnection().a((Packet<?>) packet.build());
         } catch (Exception e) {
             Logger.error.println(e);
         }
@@ -212,14 +231,14 @@ public class NMSPlayer extends TNLPlayer {
                 signMenu.setLocation(location);
                 BlockPosition position = new BlockPosition(location.getX(), location.getY(), location.getZ());
                 OpenSignPacket editor = OpenSignPacket.create(location);
-                TileEntitySign tileEntitySign = new TileEntitySign();
-                tileEntitySign.setLocation(worldServer(), position);
-                for (int line = 0; line < signMenu.getLines().length; line++) {
-                    tileEntitySign.lines[line] = new ChatMessage(Message.format(signMenu.getLines()[line], getPlayer()));
-                }
                 Material material = Material.getMaterial(signMenu.getType().name());
-                worldManager().sendBlockChange(location, Objects.requireNonNullElse(material, Material.SPRUCE_WALL_SIGN).createBlockData());
-                PacketPlayOutTileEntityData packet = tileEntitySign.getUpdatePacket();
+                BlockData blockData = material == null ? Material.SPRUCE_WALL_SIGN.createBlockData() : material.createBlockData();
+                TileEntitySign tileEntitySign = new TileEntitySign(position, (IBlockData) blockData);
+                for (int line = 0; line < signMenu.getLines().length; line++) {
+                    tileEntitySign.d[line] = new ChatMessage(Message.format(signMenu.getLines()[line], getPlayer()));
+                }
+                worldManager().sendBlockChange(location, blockData);
+                PacketPlayOutTileEntityData packet = tileEntitySign.c();
                 assert packet != null;
                 sendPackets(PacketBuilder.of(packet), editor);
                 this.signMenu = signMenu;
@@ -240,19 +259,16 @@ public class NMSPlayer extends TNLPlayer {
         if (worldManager == null) worldManager = new WorldManager() {
             @Override
             public boolean isInRain() {
-                BlockPosition position1 = nms().getChunkCoordinates();
-                BlockPosition position2 = new BlockPosition(position1.getX(), getBoundingBox().getMaxY(), position1.getZ());
-                return worldServer().isRainingAt(position1) || worldServer().isRainingAt(position2);
+                return !getWorld().isClearWeather();
             }
 
             @Override
             public void strikeLightning(@Nonnull Location location, boolean effect, boolean sound) {
-                EntityLightning lightning = new EntityLightning(EntityTypes.LIGHTNING_BOLT, worldServer());
-                lightning.setLocation(location.getX(), location.getY(), location.getZ(), 0, 0);
-                lightning.setEffect(effect);
+                EntityLightning lightning = new EntityLightning(EntityTypes.U, worldServer());
+                lightning.f(location.getX(), location.getY(), location.getZ());
+                lightning.a(effect);
                 lightning.isSilent = !sound;
-                lightning.tick();
-                sendPacket(PacketBuilder.of(lightning.P()));
+                sendPacket(PacketBuilder.of(lightning.S()));
             }
 
             @Nonnull
@@ -270,12 +286,12 @@ public class NMSPlayer extends TNLPlayer {
         if (combatManager == null) combatManager = new CombatManager() {
             @Override
             public void exitCombat() {
-                nms().exitCombat();
+                nms().i();
             }
 
             @Override
             public void enterCombat() {
-                nms().enterCombat();
+                nms().h();
             }
 
             @Nonnull
@@ -299,7 +315,7 @@ public class NMSPlayer extends TNLPlayer {
             @Override
             public Skin getSkin() {
                 if (this.skin == null) {
-                    GameProfile profile = nms().getProfile();
+                    GameProfile profile = nms().fp();
                     Collection<Property> textures = profile.getProperties().get("textures");
                     for (Property texture : textures) {
                         this.skin = new Skin(texture.getValue(), texture.getSignature());
@@ -337,7 +353,7 @@ public class NMSPlayer extends TNLPlayer {
             @Override
             public void setCapeVisibility(boolean visible) {
                 cape = visible;
-                nms().getDataWatcher().set(DataWatcherRegistry.a.a(16), (byte) (cape ? 127 : 126));
+                nms().ai().a(DataWatcherRegistry.a.a(16), (byte) (cape ? 127 : 126));
             }
 
             @Nonnull
@@ -356,7 +372,7 @@ public class NMSPlayer extends TNLPlayer {
             @Override
             public void dropItem(@Nonnull ItemStack item, @Nonnull Consumer<org.bukkit.entity.Item> after) {
                 Bootstrap.getInstance().sync(() -> {
-                    EntityItem drop = nms().drop(CraftItemStack.asNMSCopy(item), true);
+                    EntityItem drop = nms().a(CraftItemStack.asNMSCopy(item), true);
                     if (!(drop instanceof org.bukkit.entity.Item)) return;
                     after.accept((org.bukkit.entity.Item) drop.getBukkitEntity());
                 });
@@ -391,12 +407,12 @@ public class NMSPlayer extends TNLPlayer {
             @Nonnull
             @Override
             public AttributeInstance getAttribute(@Nonnull Attribute attribute) {
-                return new CraftAttributeInstance(nms().getAttributeMap().a(toMinecraft(attribute)), attribute);
+                return new CraftAttributeInstance(nms().ep().a(toMinecraft(attribute)), attribute);
             }
 
             @Nullable
             private AttributeBase toMinecraft(@Nonnull Attribute attribute) {
-                return IRegistry.ATTRIBUTE.get(CraftNamespacedKey.toMinecraft(attribute.getKey()));
+                return IRegistry.am.a(CraftNamespacedKey.toMinecraft(attribute.getKey()));
             }
 
             @Nonnull
@@ -412,14 +428,22 @@ public class NMSPlayer extends TNLPlayer {
     @Override
     public MetaManager metaManager() {
         if (metaManager == null) metaManager = new MetaManager() {
+
+            @Nonnull
+            private static final DataWatcherObject<Byte> object = DataWatcher.a(EntityLiving.class, DataWatcherRegistry.a);
+
             @Override
             public void setFlag(int flag, boolean value) {
-                nms().setFlag(flag, value);
+                byte b0 = nms().ai().a(object);
+                int j;
+                if (value) j = b0 | flag;
+                else j = b0 & ~flag;
+                nms().ai().b(object, (byte) j);
             }
 
             @Override
             public boolean getFlag(int flag) {
-                return nms().getFlag(flag);
+                return (nms().ai().a(object) & 1 << flag) != 0;
             }
 
             @Nonnull
@@ -528,7 +552,7 @@ public class NMSPlayer extends TNLPlayer {
         if (cooldownManager == null) cooldownManager = new CooldownManager() {
             @Override
             public void resetAttackCooldown() {
-                nms().resetAttackCooldown();
+                nms().aT = 0;
             }
 
             @Nonnull
@@ -542,8 +566,8 @@ public class NMSPlayer extends TNLPlayer {
 
     @Override
     public boolean isInjected() {
-        if (((CraftPlayer) bukkit()).getHandle().playerConnection == null) return false;
-        return playerConnection().networkManager != null;
+        if (nms().b == null) return false;
+        return playerConnection().a != null;
     }
 
     @Override
@@ -572,7 +596,7 @@ public class NMSPlayer extends TNLPlayer {
                     }
                 }
             };
-            ChannelPipeline pipeline = networkManager().channel.pipeline();
+            ChannelPipeline pipeline = networkManager().k.pipeline();
             try {
                 pipeline.addBefore("packet_handler", getName() + "-TNLListener", channelDuplexHandler);
             } catch (Throwable ignored) {
@@ -587,7 +611,7 @@ public class NMSPlayer extends TNLPlayer {
     @Override
     public void uninject() {
         try {
-            Channel channel = networkManager().channel;
+            Channel channel = networkManager().k;
             if (channel.pipeline().get(getName() + "-TNLListener") != null) {
                 channel.eventLoop().submit(() -> channel.pipeline().remove(getName() + "-TNLListener"));
             }
