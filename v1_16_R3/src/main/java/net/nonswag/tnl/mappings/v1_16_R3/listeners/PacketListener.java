@@ -80,7 +80,7 @@ public class PacketListener implements Listener {
                         new MysteryPlayerMessageEvent(event.getPlayer(), packet.tag.getKey(), key, message).call();
                     }
                 } catch (Exception e) {
-                    Logger.error.println("An error occurred while reading a mod message from <'" + namespace + "'>", e.getMessage());
+                    Logger.error.println("An error occurred while reading a mod message from <'" + namespace + "'>", e);
                 }
             } else if (event.getPacket() instanceof PacketPlayInUseEntity packet) {
                 Entity entity = packet.a(((CraftWorld) event.getPlayer().worldManager().getWorld()).getHandle());

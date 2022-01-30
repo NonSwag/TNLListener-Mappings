@@ -56,6 +56,12 @@ public class Mappings extends Mapping {
 
     @Nonnull
     @Override
+    public String overrideLogger() {
+        return "Async";
+    }
+
+    @Nonnull
+    @Override
     public TNLPlayer createPlayer(@Nonnull Player player) {
         return new NMSPlayer(player);
     }

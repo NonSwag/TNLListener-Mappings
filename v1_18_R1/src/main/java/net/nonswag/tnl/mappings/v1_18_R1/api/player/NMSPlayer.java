@@ -604,7 +604,7 @@ public class NMSPlayer extends TNLPlayer {
             }
         } catch (Exception e) {
             uninject();
-            Logger.error.println(e.getMessage());
+            Logger.error.println(e);
         }
     }
 
