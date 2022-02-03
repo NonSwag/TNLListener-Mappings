@@ -43,7 +43,9 @@ public class Mappings extends Mapping {
     @Override
     public void enable() {
         getEventManager().registerListener(new PacketListener());
-        if (Settings.AUTO_UPDATER.getValue()) new PluginUpdate(this).downloadUpdate();
+        async(() -> {
+            if (Settings.AUTO_UPDATER.getValue()) new PluginUpdate(this).downloadUpdate();
+        });
     }
 
     @Nonnull
