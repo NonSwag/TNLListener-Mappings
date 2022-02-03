@@ -256,6 +256,10 @@ public class PacketListener implements Listener {
             } else if (event.getPacket() instanceof PacketPlayInUseItem packet) {
                 BlockPosition position = packet.c().getBlockPosition();
                 Block block = new Location(event.getPlayer().worldManager().getWorld(), position.getX(), position.getY(), position.getZ()).getBlock();
+                if (block.getLocation().distance(event.getPlayer().worldManager().getLocation()) > 10) {
+                    event.setCancelled(true);
+                    return;
+                }
                 final EnumDirection direction = ((PacketPlayInUseItem) event.getPacket()).c().getDirection();
                 BlockFace face = event.getPlayer().worldManager().getFacing().getOppositeFace();
                 try {
