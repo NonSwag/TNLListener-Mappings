@@ -266,6 +266,32 @@ public class NMSPlayer extends TNLPlayer {
 
     @Nonnull
     @Override
+    public EnvironmentManager environmentManager() {
+        if (environmentManager == null) environmentManager = new EnvironmentManager() {
+            @Nonnull
+            @Override
+            public TNLPlayer getPlayer() {
+                return NMSPlayer.this;
+            }
+        };
+        return environmentManager;
+    }
+
+    @Nonnull
+    @Override
+    public HealthManager healthManager() {
+        if (healthManager == null) healthManager = new HealthManager() {
+            @Nonnull
+            @Override
+            public TNLPlayer getPlayer() {
+                return NMSPlayer.this;
+            }
+        };
+        return healthManager;
+    }
+
+    @Nonnull
+    @Override
     public CombatManager combatManager() {
         if (combatManager == null) combatManager = new CombatManager() {
             @Override
