@@ -6,6 +6,7 @@ import io.netty.channel.*;
 import net.minecraft.server.v1_16_R3.*;
 import net.nonswag.tnl.core.api.logger.Logger;
 import net.nonswag.tnl.core.api.message.Message;
+import net.nonswag.tnl.core.api.object.Pair;
 import net.nonswag.tnl.core.api.reflection.Reflection;
 import net.nonswag.tnl.listener.Bootstrap;
 import net.nonswag.tnl.listener.api.entity.TNLEntity;
@@ -37,6 +38,7 @@ import org.bukkit.inventory.ItemStack;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -579,6 +581,7 @@ public class NMSPlayer extends TNLPlayer {
                 @Override
                 public void channelRead(ChannelHandlerContext channelHandlerContext, Object packetObject) {
                     try {
+                        if (!handleInjections(packetObject)) return;
                         PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packetObject);
                         if (event.call()) super.channelRead(channelHandlerContext, event.getPacket());
                     } catch (Exception e) {
@@ -590,12 +593,34 @@ public class NMSPlayer extends TNLPlayer {
                 @Override
                 public void write(ChannelHandlerContext channelHandlerContext, Object packetObject, ChannelPromise channelPromise) {
                     try {
+                        if (!handleInjections(packetObject)) return;
                         PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packetObject);
                         if (event.call()) super.write(channelHandlerContext, event.getPacket(), channelPromise);
                     } catch (Exception e) {
                         Logger.error.println(e);
                         uninject();
                     }
+                }
+
+                private boolean handleInjections(@Nonnull Object packet) {
+                    Iterator<Pair<Class<?>, Injection<?>>> iterator = getInjections().iterator();
+                    boolean success = true;
+                    while (iterator.hasNext()) {
+                        Pair<Class<?>, Injection<?>> pair = iterator.next();
+                        if (!pair.getKey().equals(packet.getClass())) continue;
+                        Injection<Object> injection = (Injection<Object>) pair.getValue();
+                        if (injection != null) {
+                            try {
+                                injection.run(NMSPlayer.this, packet);
+                                if (injection.isCancelled()) success = false;
+                            } catch (Throwable t) {
+                                Logger.error.println(t);
+                            } finally {
+                                if (injection.isForRemove()) iterator.remove();
+                            }
+                        } else iterator.remove();
+                    }
+                    return success;
                 }
             };
             ChannelPipeline pipeline = networkManager().channel.pipeline();
@@ -617,6 +642,7 @@ public class NMSPlayer extends TNLPlayer {
             if (channel.pipeline().get(getName() + "-TNLListener") != null) {
                 channel.eventLoop().submit(() -> channel.pipeline().remove(getName() + "-TNLListener"));
             }
+            getInjections().clear();
             data().export();
         } catch (Exception ignored) {
         } finally {

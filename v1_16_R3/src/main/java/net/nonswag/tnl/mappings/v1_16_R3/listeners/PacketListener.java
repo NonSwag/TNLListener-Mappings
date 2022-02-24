@@ -9,6 +9,7 @@ import net.nonswag.tnl.core.api.language.Language;
 import net.nonswag.tnl.core.api.logger.Logger;
 import net.nonswag.tnl.core.api.message.Message;
 import net.nonswag.tnl.core.api.object.Objects;
+import net.nonswag.tnl.core.api.object.Pair;
 import net.nonswag.tnl.core.api.reflection.Reflection;
 import net.nonswag.tnl.listener.Bootstrap;
 import net.nonswag.tnl.listener.api.event.TNLEvent;
@@ -18,7 +19,9 @@ import net.nonswag.tnl.listener.api.gui.GUIItem;
 import net.nonswag.tnl.listener.api.gui.Interaction;
 import net.nonswag.tnl.listener.api.holograms.Hologram;
 import net.nonswag.tnl.listener.api.holograms.event.InteractEvent;
+import net.nonswag.tnl.listener.api.packets.Injection;
 import net.nonswag.tnl.listener.api.packets.OpenWindowPacket;
+import net.nonswag.tnl.listener.api.packets.PacketBuilder;
 import net.nonswag.tnl.listener.api.packets.SetSlotPacket;
 import net.nonswag.tnl.listener.api.player.npc.FakePlayer;
 import net.nonswag.tnl.listener.api.serializer.ModPacketSerializer;
@@ -73,11 +76,11 @@ public class PacketListener implements Listener {
                     if (namespace.equals("labymod3")) {
                         String key = ModPacketSerializer.readString(buf, Short.MAX_VALUE);
                         JsonElement message = JsonHelper.parse(ModPacketSerializer.readString(buf, Short.MAX_VALUE));
-                        new LabyPlayerMessageEvent(event.getPlayer(), packet.tag.getKey(), key, message).call();
+                        new LabyPlayerMessageEvent(event.getPlayer().labymod(), packet.tag.getKey(), key, message).call();
                     } else {
                         String key = ModPacketSerializer.readString(buf, Short.MAX_VALUE);
                         JsonElement message = JsonHelper.parse(key);
-                        new MysteryPlayerMessageEvent(event.getPlayer(), packet.tag.getKey(), key, message).call();
+                        new MysteryPlayerMessageEvent(event.getPlayer().mysterymod(), packet.tag.getKey(), key, message).call();
                     }
                 } catch (Exception e) {
                     Logger.error.println("An error occurred while reading a mod message from <'" + namespace + "'>", e);
