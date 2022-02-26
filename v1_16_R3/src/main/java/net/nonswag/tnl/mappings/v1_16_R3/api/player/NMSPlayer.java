@@ -616,6 +616,8 @@ public class NMSPlayer extends TNLPlayer {
                             } catch (Throwable t) {
                                 Logger.error.println(t);
                             } finally {
+                                Injection.After after = injection.getAfter();
+                                if (after != null) after.run(NMSPlayer.this);
                                 if (injection.isForRemove()) iterator.remove();
                             }
                         } else iterator.remove();
