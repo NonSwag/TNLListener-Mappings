@@ -604,25 +604,26 @@ public class NMSPlayer extends TNLPlayer {
 
                 private boolean handleInjections(@Nonnull Object packet) {
                     Iterator<Pair<Class<?>, Injection<?>>> iterator = getInjections().iterator();
-                    boolean success = true;
+                    boolean cancelled = false;
                     while (iterator.hasNext()) {
                         Pair<Class<?>, Injection<?>> pair = iterator.next();
                         Injection<Object> injection = (Injection<Object>) pair.getValue();
                         if (injection != null) {
                             if (!pair.getKey().equals(packet.getClass())) continue;
+                            boolean success = true;
                             try {
-                                injection.run(NMSPlayer.this, packet);
-                                if (injection.isCancelled()) success = false;
+                                success = injection.run(NMSPlayer.this, packet);
+                                if (injection.isCancelled()) cancelled = true;
                             } catch (Throwable t) {
                                 Logger.error.println(t);
                             } finally {
                                 Injection.After after = injection.getAfter();
-                                if (after != null) after.run(NMSPlayer.this);
+                                if (success && after != null) after.run(NMSPlayer.this);
                                 if (injection.isForRemove()) iterator.remove();
                             }
                         } else iterator.remove();
                     }
-                    return success;
+                    return !cancelled;
                 }
             };
             ChannelPipeline pipeline = networkManager().channel.pipeline();
