@@ -609,8 +609,8 @@ public class NMSPlayer extends TNLPlayer {
                         Pair<Class<?>, Injection<?>> pair = iterator.next();
                         Injection<Object> injection = (Injection<Object>) pair.getValue();
                         if (injection != null) {
+                            if (!pair.getKey().equals(packet.getClass())) continue;
                             try {
-                                if (!pair.getKey().equals(packet.getClass())) continue;
                                 injection.run(NMSPlayer.this, packet);
                                 if (injection.isCancelled()) success = false;
                             } catch (Throwable t) {
