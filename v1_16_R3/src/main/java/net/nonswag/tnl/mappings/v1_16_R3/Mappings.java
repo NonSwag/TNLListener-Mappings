@@ -1,6 +1,7 @@
 package net.nonswag.tnl.mappings.v1_16_R3;
 
 import net.nonswag.tnl.listener.api.bossbar.TNLBossBar;
+import net.nonswag.tnl.listener.api.enchantment.Enchant;
 import net.nonswag.tnl.listener.api.entity.TNLArmorStand;
 import net.nonswag.tnl.listener.api.entity.TNLEntityPlayer;
 import net.nonswag.tnl.listener.api.entity.TNLFallingBlock;
@@ -13,6 +14,7 @@ import net.nonswag.tnl.listener.api.plugin.PluginUpdate;
 import net.nonswag.tnl.listener.api.settings.Settings;
 import net.nonswag.tnl.listener.api.version.Version;
 import net.nonswag.tnl.mappings.v1_16_R3.api.bossbar.NMSBossBar;
+import net.nonswag.tnl.mappings.v1_16_R3.api.enchantments.EnchantmentWrapper;
 import net.nonswag.tnl.mappings.v1_16_R3.api.entity.NMSArmorStand;
 import net.nonswag.tnl.mappings.v1_16_R3.api.entity.NMSEntityPlayer;
 import net.nonswag.tnl.mappings.v1_16_R3.api.entity.NMSFallingBlock;
@@ -23,10 +25,12 @@ import net.nonswag.tnl.mappings.v1_16_R3.api.player.NMSPlayer;
 import net.nonswag.tnl.mappings.v1_16_R3.listeners.PacketListener;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
+import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -94,6 +98,12 @@ public class Mappings extends Mapping {
     @Override
     public TNLEntityPlayer createEntityPlayer(@Nonnull World world, double x, double y, double z, float yaw, float pitch, @Nonnull GameProfile gameProfile) {
         return new NMSEntityPlayer(world, x, y, z, yaw, pitch, gameProfile);
+    }
+
+    @Nonnull
+    @Override
+    public Enchant createEnchant(@Nonnull NamespacedKey key, @Nonnull String name, @Nonnull EnchantmentTarget target) {
+        return new EnchantmentWrapper(key, name, target);
     }
 
     @Nonnull
