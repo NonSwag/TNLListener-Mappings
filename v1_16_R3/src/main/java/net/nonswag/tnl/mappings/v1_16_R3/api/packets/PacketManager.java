@@ -6,37 +6,7 @@ import net.nonswag.tnl.listener.api.item.SlotType;
 import net.nonswag.tnl.listener.api.location.BlockLocation;
 import net.nonswag.tnl.listener.api.location.Position;
 import net.nonswag.tnl.listener.api.mapper.Mapping;
-import net.nonswag.tnl.listener.api.packets.BlockBreakAnimationPacket;
-import net.nonswag.tnl.listener.api.packets.BossBarPacket;
-import net.nonswag.tnl.listener.api.packets.CameraPacket;
-import net.nonswag.tnl.listener.api.packets.ChatPacket;
-import net.nonswag.tnl.listener.api.packets.CloseWindowPacket;
-import net.nonswag.tnl.listener.api.packets.CooldownPacket;
-import net.nonswag.tnl.listener.api.packets.CustomPayloadPacket;
-import net.nonswag.tnl.listener.api.packets.EntityAnimationPacket;
-import net.nonswag.tnl.listener.api.packets.EntityAttachPacket;
-import net.nonswag.tnl.listener.api.packets.EntityDestroyPacket;
-import net.nonswag.tnl.listener.api.packets.EntityEquipmentPacket;
-import net.nonswag.tnl.listener.api.packets.EntityHeadRotationPacket;
-import net.nonswag.tnl.listener.api.packets.EntityMetadataPacket;
-import net.nonswag.tnl.listener.api.packets.EntitySpawnPacket;
-import net.nonswag.tnl.listener.api.packets.EntityStatusPacket;
-import net.nonswag.tnl.listener.api.packets.EntityTeleportPacket;
-import net.nonswag.tnl.listener.api.packets.EntityVelocityPacket;
-import net.nonswag.tnl.listener.api.packets.GameStateChangePacket;
-import net.nonswag.tnl.listener.api.packets.LivingEntitySpawnPacket;
-import net.nonswag.tnl.listener.api.packets.MapChunkPacket;
-import net.nonswag.tnl.listener.api.packets.MountPacket;
-import net.nonswag.tnl.listener.api.packets.NamedEntitySpawnPacket;
-import net.nonswag.tnl.listener.api.packets.OpenSignPacket;
-import net.nonswag.tnl.listener.api.packets.OpenWindowPacket;
-import net.nonswag.tnl.listener.api.packets.PlayerInfoPacket;
-import net.nonswag.tnl.listener.api.packets.SetSlotPacket;
-import net.nonswag.tnl.listener.api.packets.TitlePacket;
-import net.nonswag.tnl.listener.api.packets.UpdateTimePacket;
-import net.nonswag.tnl.listener.api.packets.WindowDataPacket;
-import net.nonswag.tnl.listener.api.packets.WindowItemsPacket;
-import net.nonswag.tnl.listener.api.packets.WorldBorderPacket;
+import net.nonswag.tnl.listener.api.packets.*;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.boss.BossBar;
@@ -149,6 +119,12 @@ public final class PacketManager extends Mapping.Packets {
     @Override
     public EntityHeadRotationPacket entityHeadRotationPacket(int entityId, float yaw) {
         return new NMSEntityHeadRotationPacket(entityId, yaw);
+    }
+
+    @Nonnull
+    @Override
+    public EntityBodyRotationPacket entityBodyRotationPacket(int entityId, float rotation) {
+        return new NMSEntityBodyRotationPacket(entityId, rotation);
     }
 
     @Nonnull
