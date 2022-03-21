@@ -29,13 +29,13 @@ public class NMSItem extends TNLItem {
     @Nonnull
     @Override
     public NMSItem modifyNBT(@Nonnull String nbt) {
+        net.minecraft.server.v1_16_R3.ItemStack item = CraftItemStack.asNMSCopy(this);
         try {
-            net.minecraft.server.v1_16_R3.ItemStack item = CraftItemStack.asNMSCopy(this);
-            item.setTag(MojangsonParser.parse(nbt));
-            setItemMeta(CraftItemStack.getItemMeta(item));
+            item.setTag(item.getOrCreateTag().a(MojangsonParser.parse(nbt)));
         } catch (CommandSyntaxException e) {
-            Logger.error.println("Failed to modify item nbt ", e);
+            Logger.error.println("Failed to modify item nbt", e);
         }
+        setItemMeta(CraftItemStack.getItemMeta(item));
         return this;
     }
 
