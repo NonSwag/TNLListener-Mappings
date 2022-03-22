@@ -157,98 +157,90 @@ public class PacketListener implements Listener {
                 } else if (((PacketPlayInBlockPlace) event.getPacket()).b().equals(EnumHand.OFF_HAND)) {
                     itemStack = event.getPlayer().inventoryManager().getInventory().getItemInOffHand();
                 }
-                if (itemStack != null && itemStack.getType().equals(Material.GLASS_BOTTLE)) {
-                    Block target = event.getPlayer().worldManager().getTargetBlock(5, FluidCollisionMode.ALWAYS);
-                    if (!(target != null && (target.getType().equals(Material.WATER)
-                            || (target.getBlockData() instanceof Waterlogged
-                            && ((Waterlogged) target.getBlockData()).isWaterlogged())
-                            || target.getType().equals(Material.KELP)
-                            || target.getType().equals(Material.KELP_PLANT)))) {
-                        for (int i = 0; i < 6; i++) {
-                            target = event.getPlayer().worldManager().getTargetBlock(i, FluidCollisionMode.ALWAYS);
-                            if (target != null && (target.getType().equals(Material.WATER)
-                                    || (target.getBlockData() instanceof Waterlogged
-                                    && ((Waterlogged) target.getBlockData()).isWaterlogged())
-                                    || target.getType().equals(Material.KELP)
-                                    || target.getType().equals(Material.KELP_PLANT))) {
-                                break;
-                            }
+                if (itemStack == null || !itemStack.getType().equals(Material.GLASS_BOTTLE)) return;
+                Block target = event.getPlayer().worldManager().getTargetBlock(5, FluidCollisionMode.ALWAYS);
+                if (!(target != null && (target.getType().equals(Material.WATER)
+                        || (target.getBlockData() instanceof Waterlogged
+                        && ((Waterlogged) target.getBlockData()).isWaterlogged())
+                        || target.getType().equals(Material.KELP)
+                        || target.getType().equals(Material.KELP_PLANT)))) {
+                    for (int i = 0; i < 6; i++) {
+                        target = event.getPlayer().worldManager().getTargetBlock(i, FluidCollisionMode.ALWAYS);
+                        if (target != null && (target.getType().equals(Material.WATER)
+                                || (target.getBlockData() instanceof Waterlogged
+                                && ((Waterlogged) target.getBlockData()).isWaterlogged())
+                                || target.getType().equals(Material.KELP)
+                                || target.getType().equals(Material.KELP_PLANT))) {
+                            break;
                         }
                     }
-                    if (target != null && (target.getType().equals(Material.WATER)
-                            || (target.getBlockData() instanceof Waterlogged
-                            && ((Waterlogged) target.getBlockData()).isWaterlogged())
-                            || target.getType().equals(Material.KELP)
-                            || target.getType().equals(Material.KELP_PLANT))) {
-                        PlayerBottleFillEvent e = new PlayerBottleFillEvent(event.getPlayer(), itemStack, target);
-                        if (!e.call()) {
-                            event.setCancelled(true);
-                            event.getPlayer().inventoryManager().updateInventory();
-                        }
-                        if (((PacketPlayInBlockPlace) event.getPacket()).b().equals(EnumHand.MAIN_HAND)) {
-                            event.getPlayer().inventoryManager().getInventory().setItemInMainHand(e.getItemStack());
-                        } else if (((PacketPlayInBlockPlace) event.getPacket()).b().equals(EnumHand.OFF_HAND)) {
-                            event.getPlayer().inventoryManager().getInventory().setItemInOffHand(e.getItemStack());
-                        }
+                }
+                if (target != null && (target.getType().equals(Material.WATER)
+                        || (target.getBlockData() instanceof Waterlogged
+                        && ((Waterlogged) target.getBlockData()).isWaterlogged())
+                        || target.getType().equals(Material.KELP)
+                        || target.getType().equals(Material.KELP_PLANT))) {
+                    PlayerBottleFillEvent e = new PlayerBottleFillEvent(event.getPlayer(), itemStack, target);
+                    if (!e.call()) {
+                        event.setCancelled(true);
+                        event.getPlayer().inventoryManager().updateInventory();
+                    }
+                    if (((PacketPlayInBlockPlace) event.getPacket()).b().equals(EnumHand.MAIN_HAND)) {
+                        event.getPlayer().inventoryManager().getInventory().setItemInMainHand(e.getItemStack());
+                    } else if (((PacketPlayInBlockPlace) event.getPacket()).b().equals(EnumHand.OFF_HAND)) {
+                        event.getPlayer().inventoryManager().getInventory().setItemInOffHand(e.getItemStack());
                     }
                 }
             } else if (event.getPacket() instanceof PacketPlayInUpdateSign) {
-                SignMenu signMenu = event.getPlayer().interfaceManager().getSignMenu();
-                if (signMenu == null) return;
+                SignMenu menu = event.getPlayer().interfaceManager().getSignMenu();
+                if (menu == null) return;
                 event.setCancelled(true);
-                if (signMenu.getResponse() != null) {
+                if (menu.getResponse() != null) {
                     Bootstrap.getInstance().sync(() -> {
-                        boolean success = signMenu.getResponse().test(event.getPlayer(), ((PacketPlayInUpdateSign) event.getPacket()).c());
-                        if (!success && signMenu.isReopenOnFail()) {
-                            event.getPlayer().interfaceManager().openVirtualSignEditor(signMenu);
+                        boolean success = menu.getResponse().test(event.getPlayer(), ((PacketPlayInUpdateSign) event.getPacket()).c());
+                        if (!success && menu.isReopenOnFail()) {
+                            event.getPlayer().interfaceManager().openVirtualSignEditor(menu);
                         }
                     });
                 }
-                if (signMenu.getLocation() != null) {
-                    event.getPlayer().worldManager().sendBlockChange(signMenu.getLocation());
-                }
+                if (menu.getLocation() != null) event.getPlayer().worldManager().sendBlockChange(menu.getLocation());
                 event.getPlayer().interfaceManager().closeSignMenu();
             } else if (event.getPacket() instanceof PacketPlayInItemName packet) {
                 GUI gui = event.getPlayer().interfaceManager().getGUI();
-                if (gui instanceof AnvilGUI anvil) {
-                    event.setCancelled(true);
-                    for (AnvilGUI.TextInputEvent textInputEvent : anvil.getTextInputEvents()) {
-                        textInputEvent.onTextInput(event.getPlayer(), packet.b() == null ? "" : packet.b());
-                    }
+                if (!(gui instanceof AnvilGUI anvil)) return;
+                event.setCancelled(true);
+                for (AnvilGUI.TextInputEvent textInputEvent : anvil.getTextInputEvents()) {
+                    textInputEvent.onTextInput(event.getPlayer(), packet.b() == null ? "" : packet.b());
                 }
             } else if (event.getPacket() instanceof PacketPlayInWindowClick packet) {
                 GUI gui = event.getPlayer().interfaceManager().getGUI();
-                if (gui != null) {
-                    int slot = packet.c();
-                    if (slot < gui.getSize() && slot >= 0) {
-                        Interaction.Type type = Interaction.Type.fromNMS(packet.d(), packet.g().name());
-                        gui.getClickListener().onClick(event.getPlayer(), slot, type);
-                        GUIItem item = gui.getItem(slot);
-                        if (item != null) for (Interaction interaction : item.getInteractions(type)) {
-                            interaction.getAction().accept(event.getPlayer());
-                        }
-                    } else if (slot >= gui.getSize()) {
-                        event.setPacketField("slot", slot - gui.getSize() + 9);
-                        event.setPacketField("a", 0);
+                if (gui == null) return;
+                int slot = packet.c();
+                if (slot < gui.getSize() && slot >= 0) {
+                    Interaction.Type type = Interaction.Type.fromNMS(packet.d(), packet.g().name());
+                    gui.getClickListener().onClick(event.getPlayer(), slot, type);
+                    GUIItem item = gui.getItem(slot);
+                    if (item != null) for (Interaction interaction : item.getInteractions(type)) {
+                        interaction.getAction().accept(event.getPlayer());
                     }
-                    event.setCancelled(true);
-                    event.reply(SetSlotPacket.create(SetSlotPacket.Inventory.COURSER, -1, null));
-                    event.getPlayer().inventoryManager().updateInventory();
-                    event.getPlayer().interfaceManager().updateGUI();
+                } else if (slot >= gui.getSize()) {
+                    event.setPacketField("slot", slot - gui.getSize() + 9);
+                    event.setPacketField("a", 0);
                 }
+                event.setCancelled(true);
+                event.reply(SetSlotPacket.create(SetSlotPacket.Inventory.COURSER, -1, null));
+                event.getPlayer().inventoryManager().updateInventory();
+                event.getPlayer().interfaceManager().updateGUI();
             } else if (event.getPacket() instanceof PacketPlayInCloseWindow) {
                 GUI gui = event.getPlayer().interfaceManager().getGUI();
-                if (gui != null) {
-                    event.setCancelled(true);
-                    if (!gui.getCloseListener().onClose(event.getPlayer(), false)) {
-                        event.reply(OpenWindowPacket.create(gui.getSize() / 9, Message.format(gui.getTitle())));
-                        event.getPlayer().interfaceManager().updateGUI(gui);
-                    } else {
-                        if (gui.getCloseSound() != null) {
-                            event.getPlayer().soundManager().playSound(gui.getCloseSound());
-                        }
-                        event.getPlayer().interfaceManager().closeGUI(false);
-                    }
+                if (gui == null) return;
+                event.setCancelled(true);
+                if (!gui.getCloseListener().onClose(event.getPlayer(), false)) {
+                    event.reply(OpenWindowPacket.create(gui.getSize() / 9, Message.format(gui.getTitle())));
+                    event.getPlayer().interfaceManager().updateGUI(gui);
+                } else {
+                    if (gui.getCloseSound() != null) event.getPlayer().soundManager().playSound(gui.getCloseSound());
+                    event.getPlayer().interfaceManager().closeGUI(false);
                 }
             } else if (event.getPacket() instanceof PacketPlayInPickItem packet) {
                 PlayerItemPickEvent pickEvent = new PlayerItemPickEvent(event.getPlayer(), packet.b());
@@ -295,10 +287,9 @@ public class PacketListener implements Listener {
                 }
             } else if (event.getPacket() instanceof PacketPlayOutCloseWindow) {
                 GUI gui = event.getPlayer().interfaceManager().getGUI();
-                if (gui != null) {
-                    if (gui.getCloseSound() != null) event.getPlayer().soundManager().playSound(gui.getCloseSound());
-                    gui.getCloseListener().onClose(event.getPlayer(), true);
-                }
+                if (gui == null) return;
+                if (gui.getCloseSound() != null) event.getPlayer().soundManager().playSound(gui.getCloseSound());
+                gui.getCloseListener().onClose(event.getPlayer(), true);
             } else if (event.getPacket() instanceof PacketPlayOutRespawn) {
                 ResourceKey<World> key = event.getPacketField("b", ResourceKey.class).nonnull();
                 MinecraftKey minecraftKey = Reflection.getField(key, MinecraftKey.class, "c").nonnull();
