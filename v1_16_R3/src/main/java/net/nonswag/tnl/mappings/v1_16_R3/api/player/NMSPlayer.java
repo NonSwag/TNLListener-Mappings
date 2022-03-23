@@ -210,7 +210,7 @@ public class NMSPlayer extends TNLPlayer {
             public void openVirtualSignEditor(@Nonnull SignMenu signMenu) {
                 closeGUI(false);
                 Location loc = worldManager().getLocation();
-                BlockLocation location = new BlockLocation(worldManager().getWorld(), loc.getBlockX(), loc.getBlockY() - 5, loc.getBlockZ());
+                BlockLocation location = new BlockLocation(worldManager().getWorld(), loc.getBlockX(), Math.max(loc.getBlockY() - 5, 0), loc.getBlockZ());
                 signMenu.setLocation(location);
                 BlockPosition position = new BlockPosition(location.getX(), location.getY(), location.getZ());
                 OpenSignPacket editor = OpenSignPacket.create(location);
