@@ -6,7 +6,6 @@ import io.netty.channel.*;
 import net.minecraft.server.v1_16_R3.*;
 import net.nonswag.tnl.core.api.logger.Logger;
 import net.nonswag.tnl.core.api.message.Message;
-import net.nonswag.tnl.core.api.object.Pair;
 import net.nonswag.tnl.core.api.reflection.Reflection;
 import net.nonswag.tnl.listener.Bootstrap;
 import net.nonswag.tnl.listener.api.entity.TNLEntity;
@@ -38,7 +37,6 @@ import org.bukkit.inventory.ItemStack;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -579,11 +577,11 @@ public class NMSPlayer extends TNLPlayer {
         try {
             ChannelDuplexHandler channelDuplexHandler = new ChannelDuplexHandler() {
                 @Override
-                public void channelRead(ChannelHandlerContext channelHandlerContext, Object packetObject) {
+                public void channelRead(ChannelHandlerContext context, Object packet) {
                     try {
-                        if (!handleInjections(packetObject)) return;
-                        PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packetObject);
-                        if (event.call()) super.channelRead(channelHandlerContext, event.getPacket());
+                        if (!handleInjections(packet)) return;
+                        PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packet);
+                        if (event.call()) super.channelRead(context, event.getPacket());
                     } catch (Exception e) {
                         Logger.error.println(e);
                         uninject();
@@ -591,37 +589,15 @@ public class NMSPlayer extends TNLPlayer {
                 }
 
                 @Override
-                public void write(ChannelHandlerContext channelHandlerContext, Object packetObject, ChannelPromise channelPromise) {
+                public void write(ChannelHandlerContext context, Object packet, ChannelPromise channel) {
                     try {
-                        if (!handleInjections(packetObject)) return;
-                        PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packetObject);
-                        if (event.call()) super.write(channelHandlerContext, event.getPacket(), channelPromise);
+                        if (!handleInjections(packet)) return;
+                        PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packet);
+                        if (event.call()) super.write(context, event.getPacket(), channel);
                     } catch (Exception e) {
                         Logger.error.println(e);
                         uninject();
                     }
-                }
-
-                private boolean handleInjections(@Nonnull Object packet) {
-                    Iterator<Pair<Class<?>, Injection<?>>> iterator = getInjections().iterator();
-                    boolean cancelled = false;
-                    while (iterator.hasNext()) {
-                        Pair<Class<?>, Injection<?>> pair = iterator.next();
-                        Injection<Object> injection = (Injection<Object>) pair.getValue();
-                        if (injection != null) {
-                            try {
-                                if (!pair.getKey().equals(packet.getClass())) continue;
-                                Injection.After after = injection.getAfter();
-                                if (injection.run(NMSPlayer.this, packet) && after != null) after.run(NMSPlayer.this);
-                                if (injection.isCancelled()) cancelled = true;
-                            } catch (Throwable t) {
-                                Logger.error.println(t);
-                            } finally {
-                                if (injection.isForRemove()) iterator.remove();
-                            }
-                        } else iterator.remove();
-                    }
-                    return !cancelled;
                 }
             };
             ChannelPipeline pipeline = networkManager().channel.pipeline();
