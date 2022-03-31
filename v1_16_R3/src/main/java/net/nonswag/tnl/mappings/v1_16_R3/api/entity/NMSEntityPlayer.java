@@ -3,6 +3,7 @@ package net.nonswag.tnl.mappings.v1_16_R3.api.entity;
 import com.mojang.authlib.properties.Property;
 import net.minecraft.server.v1_16_R3.DataWatcherRegistry;
 import net.minecraft.server.v1_16_R3.EntityPlayer;
+import net.minecraft.server.v1_16_R3.EntityPose;
 import net.minecraft.server.v1_16_R3.PlayerInteractManager;
 import net.nonswag.tnl.listener.api.entity.TNLEntityPlayer;
 import net.nonswag.tnl.listener.api.item.SlotType;
@@ -58,6 +59,33 @@ public class NMSEntityPlayer extends EntityPlayer implements TNLEntityPlayer, Sl
     @Override
     public int getPing() {
         return super.ping;
+    }
+
+    @Override
+    public void setPlayerPose(@Nonnull Pose pose) {
+        this.datawatcher.set(POSE, switch (pose) {
+            case SNEAKING -> EntityPose.CROUCHING;
+            case DYING -> EntityPose.DYING;
+            case FALL_FLYING -> EntityPose.FALL_FLYING;
+            case SLEEPING -> EntityPose.SLEEPING;
+            case SPIN_ATTACK -> EntityPose.SPIN_ATTACK;
+            case STANDING -> EntityPose.STANDING;
+            case SWIMMING -> EntityPose.SWIMMING;
+        });
+    }
+
+    @Nonnull
+    @Override
+    public Pose getPlayerPose() {
+        return switch (getPose()) {
+            case CROUCHING -> Pose.SNEAKING;
+            case DYING -> Pose.DYING;
+            case FALL_FLYING -> Pose.FALL_FLYING;
+            case SLEEPING -> Pose.SLEEPING;
+            case SPIN_ATTACK -> Pose.SPIN_ATTACK;
+            case STANDING -> Pose.STANDING;
+            case SWIMMING -> Pose.SWIMMING;
+        };
     }
 
     @Override
