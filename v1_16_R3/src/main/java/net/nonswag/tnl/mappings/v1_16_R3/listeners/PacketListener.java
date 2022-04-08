@@ -297,7 +297,8 @@ public class PacketListener implements Listener {
             } else if (event.getPacket() instanceof PacketPlayOutResourcePackSend packet) {
                 String url = event.getPacketField("a", String.class).nonnull();
                 String hash = event.getPacketField("b", String.class).nonnull();
-                ((NMSPlayer) event.getPlayer()).resourceManager().setResourcePack(url, hash);
+                ((NMSPlayer) event.getPlayer()).resourceManager().setResourcePackUrl(url);
+                ((NMSPlayer) event.getPlayer()).resourceManager().setResourcePackHash(hash);
             } else if (event.getPacket() instanceof PacketPlayOutCloseWindow) {
                 GUI gui = event.getPlayer().interfaceManager().getGUI();
                 if (gui == null) return;

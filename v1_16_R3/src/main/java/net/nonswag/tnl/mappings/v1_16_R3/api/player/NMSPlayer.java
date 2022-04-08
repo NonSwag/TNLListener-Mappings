@@ -615,6 +615,14 @@ public class NMSPlayer extends TNLPlayer {
         public void setStatus(@Nullable Status status) {
             this.status = status;
         }
+
+        public void setResourcePackUrl(@Nonnull String url) {
+            this.resourcePackUrl = url;
+        }
+
+        public void setResourcePackHash(@Nonnull String hash) {
+            this.resourcePackHash = hash;
+        }
     }
 
     @Override
