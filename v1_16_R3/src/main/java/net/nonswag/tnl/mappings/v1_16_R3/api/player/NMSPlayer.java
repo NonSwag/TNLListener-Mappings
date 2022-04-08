@@ -18,6 +18,7 @@ import net.nonswag.tnl.listener.api.packets.*;
 import net.nonswag.tnl.listener.api.player.Skin;
 import net.nonswag.tnl.listener.api.player.TNLPlayer;
 import net.nonswag.tnl.listener.api.player.manager.*;
+import net.nonswag.tnl.listener.api.player.manager.ResourceManager;
 import net.nonswag.tnl.listener.api.player.npc.NPCFactory;
 import net.nonswag.tnl.listener.api.sign.SignMenu;
 import net.nonswag.tnl.listener.events.PlayerPacketEvent;
@@ -80,6 +81,36 @@ public class NMSPlayer extends TNLPlayer {
     @Override
     public int getPing() {
         return nms().ping;
+    }
+
+    @Nonnull
+    private final DataWatcherObject<EntityPose> poseWatcher = DataWatcher.a(Entity.class, DataWatcherRegistry.s);
+
+    @Nonnull
+    @Override
+    public Pose getPlayerPose() {
+        return switch (nms().getPose()) {
+            case CROUCHING -> Pose.SNEAKING;
+            case DYING -> Pose.DYING;
+            case FALL_FLYING -> Pose.FALL_FLYING;
+            case SLEEPING -> Pose.SLEEPING;
+            case SPIN_ATTACK -> Pose.SPIN_ATTACK;
+            case STANDING -> Pose.STANDING;
+            case SWIMMING -> Pose.SWIMMING;
+        };
+    }
+
+    @Override
+    public void setPlayerPose(@Nonnull Pose pose) {
+        nms().getDataWatcher().set(poseWatcher, switch (pose) {
+            case SNEAKING -> EntityPose.CROUCHING;
+            case DYING -> EntityPose.DYING;
+            case FALL_FLYING -> EntityPose.FALL_FLYING;
+            case SLEEPING -> EntityPose.SLEEPING;
+            case SPIN_ATTACK -> EntityPose.SPIN_ATTACK;
+            case STANDING -> EntityPose.STANDING;
+            case SWIMMING -> EntityPose.SWIMMING;
+        });
     }
 
     @Override
@@ -566,9 +597,29 @@ public class NMSPlayer extends TNLPlayer {
         return cooldownManager;
     }
 
+    @Nonnull
+    @Override
+    public NMSResourceManager resourceManager() {
+        if (!(resourceManager instanceof NMSResourceManager)) resourceManager = new NMSResourceManager() {
+            @Nonnull
+            @Override
+            public NMSPlayer getPlayer() {
+                return NMSPlayer.this;
+            }
+        };
+        return (NMSResourceManager) resourceManager;
+    }
+
+    public static abstract class NMSResourceManager extends ResourceManager {
+
+        public void setStatus(@Nullable Status status) {
+            this.status = status;
+        }
+    }
+
     @Override
     public boolean isInjected() {
-        if (((CraftPlayer) bukkit()).getHandle().playerConnection == null) return false;
+        if (nms().playerConnection == null) return false;
         return playerConnection().networkManager != null;
     }
 

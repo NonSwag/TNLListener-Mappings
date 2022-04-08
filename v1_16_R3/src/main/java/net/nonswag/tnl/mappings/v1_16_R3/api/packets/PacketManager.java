@@ -216,4 +216,10 @@ public final class PacketManager extends Mapping.Packets {
     public WorldBorderPacket worldBorderPacket(@Nonnull VirtualBorder virtualBorder, @Nonnull WorldBorderPacket.Action action) {
         return new NMSWorldBorderPacket(virtualBorder, action);
     }
+
+    @Nonnull
+    @Override
+    public ResourcePackPacket resourcePackPacket(@Nonnull String url, @Nullable String hash) {
+        return new NMSResourcePackPacket(url, hash);
+    }
 }

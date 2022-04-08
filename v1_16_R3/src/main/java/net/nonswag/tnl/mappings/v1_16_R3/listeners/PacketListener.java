@@ -20,6 +20,7 @@ import net.nonswag.tnl.listener.api.holograms.Hologram;
 import net.nonswag.tnl.listener.api.holograms.event.InteractEvent;
 import net.nonswag.tnl.listener.api.packets.OpenWindowPacket;
 import net.nonswag.tnl.listener.api.packets.SetSlotPacket;
+import net.nonswag.tnl.listener.api.player.manager.ResourceManager;
 import net.nonswag.tnl.listener.api.player.npc.FakePlayer;
 import net.nonswag.tnl.listener.api.serializer.ModPacketSerializer;
 import net.nonswag.tnl.listener.api.settings.Settings;
@@ -27,6 +28,7 @@ import net.nonswag.tnl.listener.api.sign.SignMenu;
 import net.nonswag.tnl.listener.events.*;
 import net.nonswag.tnl.listener.events.mods.labymod.LabyPlayerMessageEvent;
 import net.nonswag.tnl.listener.events.mods.mysterymod.MysteryPlayerMessageEvent;
+import net.nonswag.tnl.mappings.v1_16_R3.api.player.NMSPlayer;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -212,6 +214,13 @@ public class PacketListener implements Listener {
                 for (AnvilGUI.TextInputEvent textInputEvent : anvil.getTextInputEvents()) {
                     textInputEvent.onTextInput(event.getPlayer(), packet.b() == null ? "" : packet.b());
                 }
+            } else if (event.getPacket() instanceof PacketPlayInResourcePackStatus packet) {
+                ((NMSPlayer) event.getPlayer()).resourceManager().setStatus(switch (packet.status) {
+                    case ACCEPTED -> ResourceManager.Status.ACCEPTED;
+                    case DECLINED -> ResourceManager.Status.DECLINED;
+                    case FAILED_DOWNLOAD -> ResourceManager.Status.FAILED_DOWNLOAD;
+                    case SUCCESSFULLY_LOADED -> ResourceManager.Status.SUCCESSFULLY_LOADED;
+                });
             } else if (event.getPacket() instanceof PacketPlayInWindowClick packet) {
                 GUI gui = event.getPlayer().interfaceManager().getGUI();
                 if (gui == null) return;
@@ -285,6 +294,10 @@ public class PacketListener implements Listener {
                         if (k.nonnull().equals(EntityTypes.FALLING_BLOCK)) event.setCancelled(true);
                     }
                 }
+            } else if (event.getPacket() instanceof PacketPlayOutResourcePackSend packet) {
+                String url = event.getPacketField("a", String.class).nonnull();
+                String hash = event.getPacketField("b", String.class).nonnull();
+                ((NMSPlayer) event.getPlayer()).resourceManager().setResourcePack(url, hash);
             } else if (event.getPacket() instanceof PacketPlayOutCloseWindow) {
                 GUI gui = event.getPlayer().interfaceManager().getGUI();
                 if (gui == null) return;
