@@ -10,6 +10,7 @@ import net.nonswag.tnl.listener.api.packets.*;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.boss.BossBar;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
@@ -113,6 +114,12 @@ public final class PacketManager extends Mapping.Packets {
     @Override
     public <W> EntityMetadataPacket<W> entityMetadataPacket(int entityId, @Nonnull W dataWatcher, boolean updateAll) {
         return (EntityMetadataPacket<W>) new NMSEntityMetadataPacket(entityId, (DataWatcher) dataWatcher, updateAll);
+    }
+
+    @Nonnull
+    @Override
+    public <W> EntityMetadataPacket<W> entityMetadataPacket(@Nonnull Entity entity, boolean updateAll) {
+        return entityMetadataPacket(entity.getEntityId(), (W) ((CraftEntity) entity).getHandle().getDataWatcher(), updateAll);
     }
 
     @Nonnull
