@@ -25,7 +25,7 @@ public class NMSEntityPlayer extends EntityPlayer implements TNLEntityPlayer, Sl
 
     @Nonnull
     private final GameProfile gameProfile;
-    private boolean cape = true;
+    private boolean cape = false;
 
     public NMSEntityPlayer(@Nonnull World world, double x, double y, double z, float yaw, float pitch, @Nonnull GameProfile profile) {
         super(((CraftServer) Bukkit.getServer()).getServer(), ((CraftWorld) world).getHandle(),
@@ -37,7 +37,7 @@ public class NMSEntityPlayer extends EntityPlayer implements TNLEntityPlayer, Sl
         if (skin != null) {
             super.getProfile().getProperties().put("textures", new Property("textures", skin.getValue(), skin.getSignature()));
         }
-        super.getDataWatcher().set(DataWatcherRegistry.a.a(16), (byte) 126);
+        setCapeVisibility(false);
         this.gameProfile = profile;
     }
 
@@ -53,7 +53,8 @@ public class NMSEntityPlayer extends EntityPlayer implements TNLEntityPlayer, Sl
 
     @Override
     public void setGlowing(boolean glowing) {
-        this.glowing = glowing;
+        setFlag(6, glowing);
+        super.glowing = glowing;
     }
 
     @Override
