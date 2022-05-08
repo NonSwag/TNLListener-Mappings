@@ -10,6 +10,7 @@ import net.nonswag.tnl.listener.api.item.TNLItem;
 import net.nonswag.tnl.listener.api.mapper.Mapping;
 import net.nonswag.tnl.listener.api.player.GameProfile;
 import net.nonswag.tnl.listener.api.player.TNLPlayer;
+import net.nonswag.tnl.listener.api.plugin.PluginHelper;
 import net.nonswag.tnl.listener.api.plugin.PluginUpdate;
 import net.nonswag.tnl.listener.api.settings.Settings;
 import net.nonswag.tnl.listener.api.version.Version;
@@ -22,6 +23,7 @@ import net.nonswag.tnl.mappings.v1_16_R3.api.item.NMSItem;
 import net.nonswag.tnl.mappings.v1_16_R3.api.item.NMSItemHelper;
 import net.nonswag.tnl.mappings.v1_16_R3.api.packets.PacketManager;
 import net.nonswag.tnl.mappings.v1_16_R3.api.player.NMSPlayer;
+import net.nonswag.tnl.mappings.v1_16_R3.api.plugin.NMSPluginHelper;
 import net.nonswag.tnl.mappings.v1_16_R3.listeners.PacketListener;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -109,14 +111,18 @@ public class Mappings extends Mapping {
     @Nonnull
     @Override
     public ItemHelper itemHelper() {
-        if (itemHelper == null) itemHelper = new NMSItemHelper();
-        return itemHelper;
+        return itemHelper == null ? itemHelper = new NMSItemHelper() : itemHelper;
+    }
+
+    @Nonnull
+    @Override
+    public PluginHelper pluginHelper() {
+        return pluginHelper == null ? pluginHelper = new NMSPluginHelper() : pluginHelper;
     }
 
     @Nonnull
     @Override
     public Packets packets() {
-        if (packets == null) packets = new PacketManager();
-        return packets;
+        return packets == null ? packets = new PacketManager() : packets;
     }
 }
