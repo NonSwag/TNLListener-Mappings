@@ -286,13 +286,10 @@ public class PacketListener implements Listener {
         } else if (event.isOutgoing()) {
             if (event.getPacket() instanceof PacketPlayOutSpawnEntity) {
                 Objects<EntityTypes<?>> k = ((Objects<EntityTypes<?>>) event.getPacketField("k"));
-                if (k.hasValue()) {
-                    if (Settings.BETTER_TNT.getValue()) {
-                        if (k.nonnull().equals(EntityTypes.TNT)) event.setCancelled(true);
-                    }
-                    if (Settings.BETTER_FALLING_BLOCKS.getValue()) {
-                        if (k.nonnull().equals(EntityTypes.FALLING_BLOCK)) event.setCancelled(true);
-                    }
+                if (!k.hasValue()) return;
+                if (Settings.BETTER_TNT.getValue()) if (k.nonnull().equals(EntityTypes.TNT)) event.setCancelled(true);
+                if (Settings.BETTER_FALLING_BLOCKS.getValue()) {
+                    if (k.nonnull().equals(EntityTypes.FALLING_BLOCK)) event.setCancelled(true);
                 }
             } else if (event.getPacket() instanceof PacketPlayOutResourcePackSend packet) {
                 String url = event.getPacketField("a", String.class).nonnull();
