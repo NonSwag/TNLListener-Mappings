@@ -588,6 +588,11 @@ public class NMSPlayer extends TNLPlayer {
                 nms().resetAttackCooldown();
             }
 
+            @Override
+            public void setAttackCooldown(float cooldown) {
+                Reflection.setField(nms(), EntityLiving.class, "at", (int) cooldown);
+            }
+
             @Nonnull
             @Override
             public TNLPlayer getPlayer() {
