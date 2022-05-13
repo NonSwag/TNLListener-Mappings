@@ -9,7 +9,6 @@ import net.nonswag.tnl.core.api.language.Language;
 import net.nonswag.tnl.core.api.logger.Logger;
 import net.nonswag.tnl.core.api.message.Message;
 import net.nonswag.tnl.core.api.object.Objects;
-import net.nonswag.tnl.core.api.reflection.Reflection;
 import net.nonswag.tnl.listener.Bootstrap;
 import net.nonswag.tnl.listener.api.event.TNLEvent;
 import net.nonswag.tnl.listener.api.gui.AnvilGUI;
@@ -43,7 +42,7 @@ import javax.annotation.Nonnull;
 
 public class PacketListener implements Listener {
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPacket(@Nonnull PlayerPacketEvent event) {
         if (event.isIncoming()) {
             if (event.getPacket() instanceof PacketPlayInChat packet) {
@@ -118,30 +117,30 @@ public class PacketListener implements Listener {
                         }
                     }
                 }
-            } else if (event.getPacket() instanceof PacketPlayInBlockDig) {
-                PlayerDamageBlockEvent.BlockDamageType damageType = PlayerDamageBlockEvent.BlockDamageType.fromString(((PacketPlayInBlockDig) event.getPacket()).d().name());
-                BlockPosition position = ((PacketPlayInBlockDig) event.getPacket()).b();
-                EnumDirection againstBlock = ((PacketPlayInBlockDig) event.getPacket()).c();
+            } else if (event.getPacket() instanceof PacketPlayInBlockDig packet) {
+                PlayerDamageBlockEvent.BlockDamageType damageType = PlayerDamageBlockEvent.BlockDamageType.fromString(packet.d().name());
+                if (damageType.isUnknown()) return;
+                BlockPosition position = packet.b();
                 Block block = new Location(event.getPlayer().worldManager().getWorld(), position.getX(), position.getY(), position.getZ()).getBlock();
-                Block relative = block.getRelative(againstBlock.getAdjacentX(), againstBlock.getAdjacentY(), againstBlock.getAdjacentZ());
+                Block relative = block.getRelative(packet.c().getAdjacentX(), packet.c().getAdjacentY(), packet.c().getAdjacentZ());
                 if (relative.getType().equals(Material.FIRE)) {
                     position = new BlockPosition(relative.getX(), relative.getY(), relative.getZ());
                     block = new Location(event.getPlayer().worldManager().getWorld(), position.getX(), position.getY(), position.getZ()).getBlock();
                 }
                 PlayerDamageBlockEvent blockEvent = new PlayerDamageBlockEvent(event.getPlayer(), block, damageType);
                 event.setCancelled(!blockEvent.call());
-                if (blockEvent.isCancelled()) {
-                    if (blockEvent.getBlockDamageType().isInteraction(false)) {
-                        Bootstrap.getInstance().sync(() -> {
-                            for (BlockFace blockFace : BlockFace.values()) {
-                                Block rel = blockEvent.getBlock().getRelative(blockFace);
-                                event.getPlayer().worldManager().sendBlockChange(rel.getLocation(), rel.getBlockData());
-                                rel.getState().update(true, false);
-                            }
-                        });
-                    } else if (blockEvent.getBlockDamageType().isItemAction()) {
-                        event.getPlayer().inventoryManager().updateInventory();
-                    }
+                if (blockEvent.isCancelled()) return;
+                if (blockEvent.getBlockDamageType().isInteraction(false)) {
+                    Bootstrap.getInstance().sync(() -> {
+                        BlockFace[] faces = {BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.NORTH, BlockFace.UP, BlockFace.DOWN};
+                        for (BlockFace blockFace : faces) {
+                            Block rel = blockEvent.getBlock().getRelative(blockFace);
+                            event.getPlayer().worldManager().sendBlockChange(rel.getLocation(), rel.getBlockData());
+                            rel.getState().update(true, false);
+                        }
+                    });
+                } else if (blockEvent.getBlockDamageType().isItemAction()) {
+                    event.getPlayer().inventoryManager().updateInventory();
                 }
             } else if (event.getPacket() instanceof PacketPlayInTabComplete) {
                 String[] args = ((PacketPlayInTabComplete) event.getPacket()).c().split(" ");
@@ -178,11 +177,9 @@ public class PacketListener implements Listener {
                     }
                 }
                 if (target != null && (target.getType().equals(Material.WATER)
-                        || (target.getBlockData() instanceof Waterlogged
-                        && ((Waterlogged) target.getBlockData()).isWaterlogged())
-                        || target.getType().equals(Material.KELP)
-                        || target.getType().equals(Material.KELP_PLANT))) {
-                    PlayerBottleFillEvent e = new PlayerBottleFillEvent(event.getPlayer(), itemStack, target);
+                        || (target.getBlockData() instanceof Waterlogged waterlogged && waterlogged.isWaterlogged())
+                        || target.getType().equals(Material.KELP) || target.getType().equals(Material.KELP_PLANT))) {
+                    PlayerBottleFillEvent e = new PlayerBottleFillEvent(event.getPlayer(), itemStack, target, PlayerBottleFillEvent.Hand.MAIN_HAND);
                     if (!e.call()) {
                         event.setCancelled(true);
                         event.getPlayer().inventoryManager().updateInventory();
@@ -285,7 +282,7 @@ public class PacketListener implements Listener {
             }
         } else if (event.isOutgoing()) {
             if (event.getPacket() instanceof PacketPlayOutSpawnEntity) {
-                Objects<EntityTypes<?>> k = ((Objects<EntityTypes<?>>) event.getPacketField("k"));
+                var k = event.getPacketField("k", EntityTypes.class);
                 if (!k.hasValue()) return;
                 if (Settings.BETTER_TNT.getValue()) if (k.nonnull().equals(EntityTypes.TNT)) event.setCancelled(true);
                 if (Settings.BETTER_FALLING_BLOCKS.getValue()) {
@@ -301,14 +298,16 @@ public class PacketListener implements Listener {
                 if (gui == null) return;
                 if (gui.getCloseSound() != null) event.getPlayer().soundManager().playSound(gui.getCloseSound());
                 gui.getCloseListener().onClose(event.getPlayer(), true);
+            /*
             } else if (event.getPacket() instanceof PacketPlayOutRespawn) {
                 ResourceKey<World> key = event.getPacketField("b", ResourceKey.class).nonnull();
                 MinecraftKey minecraftKey = Reflection.getField(key, MinecraftKey.class, "c").nonnull();
                 Reflection.setField(minecraftKey, "namespace", "thenextlvl");
+             */
             } else if (event.getPacket() instanceof PacketPlayOutEntityStatus) {
                 int id = ((Objects<Integer>) event.getPacketField("a")).getOrDefault(-1);
                 byte b = ((Objects<Byte>) event.getPacketField("b")).getOrDefault((byte) -1);
-                if (event.getPlayer().getEntityId() == id) if (b >= 24 && b < 28) event.setPacketField("b", (byte) 28);
+                if (event.getPlayer().getEntityId() == id && b >= 24 && b < 28) event.setPacketField("b", (byte) 28);
             }
         }
     }
