@@ -17,8 +17,8 @@ import net.nonswag.tnl.listener.api.mods.mysterymod.MysteryPlayer;
 import net.nonswag.tnl.listener.api.packets.*;
 import net.nonswag.tnl.listener.api.player.Skin;
 import net.nonswag.tnl.listener.api.player.TNLPlayer;
-import net.nonswag.tnl.listener.api.player.manager.*;
 import net.nonswag.tnl.listener.api.player.manager.ResourceManager;
+import net.nonswag.tnl.listener.api.player.manager.*;
 import net.nonswag.tnl.listener.api.player.npc.NPCFactory;
 import net.nonswag.tnl.listener.api.sign.SignMenu;
 import net.nonswag.tnl.listener.events.PlayerPacketEvent;
@@ -116,15 +116,6 @@ public class NMSPlayer extends TNLPlayer {
     @Override
     public void setPing(int ping) {
         nms().ping = ping;
-    }
-
-    @Override
-    public void sendPacket(@Nonnull PacketBuilder packet) {
-        try {
-            playerConnection().sendPacket(packet.build());
-        } catch (Exception e) {
-            Logger.error.println(e);
-        }
     }
 
     @Nonnull
@@ -252,7 +243,7 @@ public class NMSPlayer extends TNLPlayer {
                 worldManager().sendBlockChange(location, Objects.requireNonNullElse(material, Material.SPRUCE_WALL_SIGN).createBlockData());
                 PacketPlayOutTileEntityData packet = tileEntitySign.getUpdatePacket();
                 assert packet != null;
-                sendPackets(PacketBuilder.of(packet), editor);
+                pipeline().sendPackets(PacketBuilder.of(packet), editor);
                 this.signMenu = signMenu;
             }
 
@@ -283,7 +274,7 @@ public class NMSPlayer extends TNLPlayer {
                 lightning.setEffect(effect);
                 lightning.isSilent = !sound;
                 lightning.tick();
-                sendPacket(PacketBuilder.of(lightning.P()));
+                pipeline().sendPacket(PacketBuilder.of(lightning.P()));
             }
 
             @Nonnull
@@ -370,24 +361,24 @@ public class NMSPlayer extends TNLPlayer {
             @Override
             public void disguise(@Nonnull TNLEntity entity, @Nonnull TNLPlayer receiver) {
                 if (getPlayer().equals(receiver)) return;
-                receiver.sendPacket(EntityDestroyPacket.create(getPlayer().bukkit()));
+                receiver.pipeline().sendPacket(EntityDestroyPacket.create(getPlayer().bukkit()));
                 int id = entity.getEntityId();
-                receiver.sendPacket(EntityDestroyPacket.create(id));
+                receiver.pipeline().sendPacket(EntityDestroyPacket.create(id));
                 if (entity instanceof TNLEntityPlayer player) {
-                    receiver.sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.REMOVE_PLAYER));
+                    receiver.pipeline().sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.REMOVE_PLAYER));
                     Reflection.setField(entity, Entity.class, "id", getPlayer().getEntityId());
-                    receiver.sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.ADD_PLAYER));
-                    receiver.sendPacket(NamedEntitySpawnPacket.create(player));
+                    receiver.pipeline().sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.ADD_PLAYER));
+                    receiver.pipeline().sendPacket(NamedEntitySpawnPacket.create(player));
                 } else if (entity instanceof TNLEntityLiving livingEntity) {
                     Reflection.setField(entity, Entity.class, "id", getPlayer().getEntityId());
-                    receiver.sendPacket(LivingEntitySpawnPacket.create(livingEntity.bukkit()));
-                    receiver.sendPacket(EntityEquipmentPacket.create(livingEntity.bukkit()));
+                    receiver.pipeline().sendPacket(LivingEntitySpawnPacket.create(livingEntity.bukkit()));
+                    receiver.pipeline().sendPacket(EntityEquipmentPacket.create(livingEntity.bukkit()));
                 } else {
                     Reflection.setField(entity, Entity.class, "id", getPlayer().getEntityId());
-                    receiver.sendPacket(EntitySpawnPacket.create(entity.bukkit()));
+                    receiver.pipeline().sendPacket(EntitySpawnPacket.create(entity.bukkit()));
                 }
-                receiver.sendPacket(EntityMetadataPacket.create(entity.bukkit()));
-                receiver.sendPacket(EntityHeadRotationPacket.create(entity.bukkit()));
+                receiver.pipeline().sendPacket(EntityMetadataPacket.create(entity.bukkit()));
+                receiver.pipeline().sendPacket(EntityHeadRotationPacket.create(entity.bukkit()));
                 Reflection.setField(entity, Entity.class, "id", id);
             }
 
@@ -615,6 +606,89 @@ public class NMSPlayer extends TNLPlayer {
         return (NMSResourceManager) resourceManager;
     }
 
+    @Nonnull
+    @Override
+    public Pipeline pipeline() {
+        return pipeline == null ? pipeline = new Pipeline() {
+
+            @Override
+            public void sendPacket(@Nonnull PacketBuilder packet) {
+                try {
+                    playerConnection().sendPacket(packet.build());
+                } catch (Exception e) {
+                    Logger.error.println(e);
+                }
+            }
+
+            @Override
+            public boolean isInjected() {
+                if (nms().playerConnection == null) return false;
+                return playerConnection().networkManager != null;
+            }
+
+            @Override
+            public void uninject() {
+                try {
+                    Channel channel = networkManager().channel;
+                    if (channel.pipeline().get(getName() + "-TNLListener") != null) {
+                        channel.eventLoop().submit(() -> channel.pipeline().remove(getName() + "-TNLListener"));
+                    }
+                    getInjections().clear();
+                    data().export();
+                } catch (Exception ignored) {
+                } finally {
+                    players.remove(bukkit());
+                }
+            }
+
+            @Override
+            public void inject() {
+                try {
+                    ChannelDuplexHandler channelDuplexHandler = new ChannelDuplexHandler() {
+                        @Override
+                        public void channelRead(ChannelHandlerContext context, Object packet) {
+                            try {
+                                if (!handleInjections(packet)) return;
+                                PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packet, PlayerPacketEvent.ChannelDirection.IN);
+                                if (event.call()) super.channelRead(context, event.getPacket());
+                            } catch (Exception e) {
+                                Logger.error.println(e);
+                                uninject();
+                            }
+                        }
+
+                        @Override
+                        public void write(ChannelHandlerContext context, Object packet, ChannelPromise channel) {
+                            try {
+                                if (!handleInjections(packet)) return;
+                                PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packet, PlayerPacketEvent.ChannelDirection.OUT);
+                                if (event.call()) super.write(context, event.getPacket(), channel);
+                            } catch (Exception e) {
+                                Logger.error.println(e);
+                                uninject();
+                            }
+                        }
+                    };
+                    ChannelPipeline pipeline = networkManager().channel.pipeline();
+                    try {
+                        pipeline.addBefore("packet_handler", getName() + "-TNLListener", channelDuplexHandler);
+                    } catch (Throwable ignored) {
+                        uninject();
+                    }
+                } catch (Exception e) {
+                    uninject();
+                    Logger.error.println(e);
+                }
+            }
+
+            @Nonnull
+            @Override
+            public TNLPlayer getPlayer() {
+                return NMSPlayer.this;
+            }
+        } : pipeline;
+    }
+
     public static abstract class NMSResourceManager extends ResourceManager {
 
         public void setStatus(@Nullable Status status) {
@@ -627,67 +701,6 @@ public class NMSPlayer extends TNLPlayer {
 
         public void setResourcePackHash(@Nonnull String hash) {
             this.resourcePackHash = hash;
-        }
-    }
-
-    @Override
-    public boolean isInjected() {
-        if (nms().playerConnection == null) return false;
-        return playerConnection().networkManager != null;
-    }
-
-    @Override
-    public void inject() {
-        try {
-            ChannelDuplexHandler channelDuplexHandler = new ChannelDuplexHandler() {
-                @Override
-                public void channelRead(ChannelHandlerContext context, Object packet) {
-                    try {
-                        if (!handleInjections(packet)) return;
-                        PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packet);
-                        if (event.call()) super.channelRead(context, event.getPacket());
-                    } catch (Exception e) {
-                        Logger.error.println(e);
-                        uninject();
-                    }
-                }
-
-                @Override
-                public void write(ChannelHandlerContext context, Object packet, ChannelPromise channel) {
-                    try {
-                        if (!handleInjections(packet)) return;
-                        PlayerPacketEvent event = new PlayerPacketEvent(NMSPlayer.this, packet);
-                        if (event.call()) super.write(context, event.getPacket(), channel);
-                    } catch (Exception e) {
-                        Logger.error.println(e);
-                        uninject();
-                    }
-                }
-            };
-            ChannelPipeline pipeline = networkManager().channel.pipeline();
-            try {
-                pipeline.addBefore("packet_handler", getName() + "-TNLListener", channelDuplexHandler);
-            } catch (Throwable ignored) {
-                uninject();
-            }
-        } catch (Exception e) {
-            uninject();
-            Logger.error.println(e);
-        }
-    }
-
-    @Override
-    public void uninject() {
-        try {
-            Channel channel = networkManager().channel;
-            if (channel.pipeline().get(getName() + "-TNLListener") != null) {
-                channel.eventLoop().submit(() -> channel.pipeline().remove(getName() + "-TNLListener"));
-            }
-            getInjections().clear();
-            data().export();
-        } catch (Exception ignored) {
-        } finally {
-            players.remove(bukkit());
         }
     }
 }
