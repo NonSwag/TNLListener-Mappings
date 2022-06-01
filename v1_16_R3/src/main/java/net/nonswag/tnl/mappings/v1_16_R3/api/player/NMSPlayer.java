@@ -8,12 +8,12 @@ import net.nonswag.tnl.core.api.logger.Logger;
 import net.nonswag.tnl.core.api.message.Message;
 import net.nonswag.tnl.core.api.reflection.Reflection;
 import net.nonswag.tnl.listener.Bootstrap;
+import net.nonswag.tnl.listener.Listener;
 import net.nonswag.tnl.listener.api.entity.TNLEntity;
 import net.nonswag.tnl.listener.api.entity.TNLEntityLiving;
 import net.nonswag.tnl.listener.api.entity.TNLEntityPlayer;
 import net.nonswag.tnl.listener.api.location.BlockLocation;
 import net.nonswag.tnl.listener.api.mods.labymod.LabyPlayer;
-import net.nonswag.tnl.listener.api.mods.mysterymod.MysteryPlayer;
 import net.nonswag.tnl.listener.api.packets.*;
 import net.nonswag.tnl.listener.api.player.Skin;
 import net.nonswag.tnl.listener.api.player.TNLPlayer;
@@ -22,7 +22,6 @@ import net.nonswag.tnl.listener.api.player.manager.*;
 import net.nonswag.tnl.listener.api.player.npc.NPCFactory;
 import net.nonswag.tnl.listener.api.sign.SignMenu;
 import net.nonswag.tnl.listener.events.PlayerPacketEvent;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -34,6 +33,7 @@ import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_16_R3.util.CraftNamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -69,12 +69,12 @@ public class NMSPlayer extends TNLPlayer {
     }
 
     @Override
-    public void setName(@Nonnull String name) {
+    public void setName(@Nonnull Plugin plugin, @Nonnull String name) {
         GameProfile profile = nms().getProfile();
         Reflection.setField(profile, "name", name);
-        for (Player all : Bukkit.getOnlinePlayers()) {
-            all.hidePlayer(Bootstrap.getInstance(), bukkit());
-            all.showPlayer(Bootstrap.getInstance(), bukkit());
+        for (TNLPlayer all : Listener.getOnlinePlayers()) {
+            all.abilityManager().hide(plugin, this);
+            all.abilityManager().show(plugin, this);
         }
     }
 
@@ -155,19 +155,6 @@ public class NMSPlayer extends TNLPlayer {
             }
         };
         return labymod;
-    }
-
-    @Nonnull
-    @Override
-    public MysteryPlayer mysterymod() {
-        if (mysterymod == null) mysterymod = new MysteryPlayer() {
-            @Nonnull
-            @Override
-            public TNLPlayer getPlayer() {
-                return NMSPlayer.this;
-            }
-        };
-        return mysterymod;
     }
 
     @Nonnull
@@ -611,6 +598,8 @@ public class NMSPlayer extends TNLPlayer {
     public Pipeline pipeline() {
         return pipeline == null ? pipeline = new Pipeline() {
 
+            private boolean injected = false;
+
             @Override
             public void sendPacket(@Nonnull PacketBuilder packet) {
                 try {
@@ -622,7 +611,7 @@ public class NMSPlayer extends TNLPlayer {
 
             @Override
             public boolean isInjected() {
-                if (nms().playerConnection == null) return false;
+                if (!injected || nms().playerConnection == null) return false;
                 return playerConnection().networkManager != null;
             }
 
@@ -638,6 +627,7 @@ public class NMSPlayer extends TNLPlayer {
                 } catch (Exception ignored) {
                 } finally {
                     players.remove(bukkit());
+                    injected = false;
                 }
             }
 
@@ -672,6 +662,7 @@ public class NMSPlayer extends TNLPlayer {
                     ChannelPipeline pipeline = networkManager().channel.pipeline();
                     try {
                         pipeline.addBefore("packet_handler", getName() + "-TNLListener", channelDuplexHandler);
+                        injected = true;
                     } catch (Throwable ignored) {
                         uninject();
                     }
