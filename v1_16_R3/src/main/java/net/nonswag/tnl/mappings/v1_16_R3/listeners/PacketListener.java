@@ -18,6 +18,7 @@ import net.nonswag.tnl.listener.api.gui.Interaction;
 import net.nonswag.tnl.listener.api.holograms.Hologram;
 import net.nonswag.tnl.listener.api.holograms.event.InteractEvent;
 import net.nonswag.tnl.listener.api.item.TNLItem;
+import net.nonswag.tnl.listener.api.mods.ModMessage;
 import net.nonswag.tnl.listener.api.packets.OpenWindowPacket;
 import net.nonswag.tnl.listener.api.packets.SetSlotPacket;
 import net.nonswag.tnl.listener.api.player.TNLPlayer;
@@ -28,7 +29,6 @@ import net.nonswag.tnl.listener.api.settings.Settings;
 import net.nonswag.tnl.listener.api.sign.SignMenu;
 import net.nonswag.tnl.listener.events.*;
 import net.nonswag.tnl.listener.events.mods.labymod.LabyPlayerMessageEvent;
-import net.nonswag.tnl.listener.events.mods.mysterymod.MysteryPlayerMessageEvent;
 import net.nonswag.tnl.mappings.v1_16_R3.api.player.NMSPlayer;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -69,20 +69,16 @@ public class PacketListener implements Listener {
         } else if (event.getPacket() instanceof PacketPlayInCustomPayload packet) {
             event.setCancelled(true);
             String namespace = packet.tag.getNamespace();
-            if (!namespace.equals("labymod3") && !namespace.equals("mysterymod")) return;
+            if (!namespace.equals("labymod3")) return;
             try {
                 byte[] data = new byte[packet.data.readableBytes()];
                 packet.data.readBytes(data);
                 ByteBuf buf = Unpooled.wrappedBuffer(data);
-                if (namespace.equals("labymod3")) {
-                    String key = ModPacketSerializer.readString(buf, Short.MAX_VALUE);
-                    JsonElement message = JsonHelper.parse(ModPacketSerializer.readString(buf, Short.MAX_VALUE));
-                    new LabyPlayerMessageEvent(player.labymod(), packet.tag.getKey(), key, message).call();
-                } else {
-                    String key = ModPacketSerializer.readString(buf, Short.MAX_VALUE);
-                    JsonElement message = JsonHelper.parse(key);
-                    new MysteryPlayerMessageEvent(player.mysterymod(), packet.tag.getKey(), key, message).call();
-                }
+                String key = ModPacketSerializer.readString(buf, Short.MAX_VALUE);
+                JsonElement message = JsonHelper.parse(ModPacketSerializer.readString(buf, Short.MAX_VALUE));
+                ModMessage modMessage = new ModMessage(packet.tag.getKey(), key, message);
+                player.labymod().handleMessage(modMessage);
+                new LabyPlayerMessageEvent(player.labymod(), modMessage).call();
             } catch (Exception e) {
                 Logger.error.println("An error occurred while reading a mod message from <'" + namespace + "'>", e);
             }

@@ -329,24 +329,24 @@ public class NMSPlayer extends TNLPlayer {
             @Override
             public void disguise(@Nonnull TNLEntity entity, @Nonnull TNLPlayer receiver) {
                 if (getPlayer().equals(receiver)) return;
-                receiver.sendPacket(EntityDestroyPacket.create(getPlayer().bukkit()));
+                receiver.pipeline().sendPacket(EntityDestroyPacket.create(getPlayer().bukkit()));
                 int id = entity.getEntityId();
-                receiver.sendPacket(EntityDestroyPacket.create(id));
+                receiver.pipeline().sendPacket(EntityDestroyPacket.create(id));
                 if (entity instanceof TNLEntityPlayer player) {
-                    receiver.sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.REMOVE_PLAYER));
+                    receiver.pipeline().sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.REMOVE_PLAYER));
                     Reflection.setField(entity, Entity.class, "id", getPlayer().getEntityId());
-                    receiver.sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.ADD_PLAYER));
-                    receiver.sendPacket(NamedEntitySpawnPacket.create(player));
+                    receiver.pipeline().sendPacket(PlayerInfoPacket.create(player, PlayerInfoPacket.Action.ADD_PLAYER));
+                    receiver.pipeline().sendPacket(NamedEntitySpawnPacket.create(player));
                 } else if (entity instanceof TNLEntityLiving livingEntity) {
                     Reflection.setField(entity, Entity.class, "id", getPlayer().getEntityId());
-                    receiver.sendPacket(LivingEntitySpawnPacket.create(livingEntity.bukkit()));
-                    receiver.sendPacket(EntityEquipmentPacket.create(livingEntity.bukkit()));
+                    receiver.pipeline().sendPacket(LivingEntitySpawnPacket.create(livingEntity.bukkit()));
+                    receiver.pipeline().sendPacket(EntityEquipmentPacket.create(livingEntity.bukkit()));
                 } else {
                     Reflection.setField(entity, Entity.class, "id", getPlayer().getEntityId());
-                    receiver.sendPacket(EntitySpawnPacket.create(entity.bukkit()));
+                    receiver.pipeline().sendPacket(EntitySpawnPacket.create(entity.bukkit()));
                 }
-                receiver.sendPacket(EntityMetadataPacket.create(entity.bukkit()));
-                receiver.sendPacket(EntityHeadRotationPacket.create(entity.bukkit()));
+                receiver.pipeline().sendPacket(EntityMetadataPacket.create(entity.bukkit()));
+                receiver.pipeline().sendPacket(EntityHeadRotationPacket.create(entity.bukkit()));
                 Reflection.setField(entity, Entity.class, "id", id);
             }
 
